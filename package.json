@@ -1,0 +1,19 @@
+{
+	"name": "root",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "concurrently -c \"red,blue\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+		"db+dev": "npm run db:start --prefix server && concurrently -c \"red,blue\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+		"clean": "concurrently -c \"red,blue\" \"npm run clean --prefix server\" \"npm run clean --prefix client\"",
+		"build": "concurrently -c \"red,blue\" \"npm run build --prefix server\" \"npm run build --prefix client\"",
+		"start": "concurrently -c \"red,blue\" \"npm run start --prefix server\" \"npm run preview --prefix client\""
+	},
+	"keywords": [],
+	"author": "Mariusz Ciastoń",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"concurrently": "^9.2.1"
+	}
+}
