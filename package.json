@@ -1,19 +1,24 @@
 {
-	"name": "root",
-	"version": "1.0.0",
-	"type": "module",
-	"scripts": {
-		"dev": "concurrently -c \"red,blue\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-		"db+dev": "npm run db:start --prefix server && concurrently -c \"red,blue\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-		"clean": "concurrently -c \"red,blue\" \"npm run clean --prefix server\" \"npm run clean --prefix client\"",
-		"build": "concurrently -c \"red,blue\" \"npm run build --prefix server\" \"npm run build --prefix client\"",
-		"start": "concurrently -c \"red,blue\" \"npm run start --prefix server\" \"npm run preview --prefix client\""
-	},
-	"keywords": [],
-	"author": "Mariusz Ciastoń",
-	"license": "ISC",
-	"description": "",
-	"dependencies": {
-		"concurrently": "^9.2.1"
-	}
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"red,blue\" \"npm run dev -w server\" \"npm run dev -w client\"",
+    "db+dev": "npm run db:start -w server && concurrently -n \"SERVER,CLIENT\" -c \"red,blue\" \"npm run dev -w server\" \"npm run dev -w client\"",
+    "clean": "concurrently -n \"SERVER,CLIENT\" -c \"red,blue\" \"npm run clean -w server\" \"npm run clean -w client\"",
+    "build": "npm run prisma:generate -w server && concurrently -n \"SERVER,CLIENT\" -c \"red,blue\" \"npm run build -w server\" \"npm run build -w client\"",
+    "start": "concurrently -n \"SERVER,CLIENT\" -c \"red,blue\" \"npm run start -w server\" \"npm run preview -w client\""
+  },
+  "keywords": [],
+  "author": "Mariusz Ciastoń",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
