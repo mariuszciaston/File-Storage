@@ -9,6 +9,6 @@
     "esModuleInterop": true,
     "ignoreDeprecations": "5.0"
   },
-  "include": ["src/**/*.ts", "lib/**/*.ts", "prisma/**/*.ts", "*.ts"],
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "*.ts"],
   "exclude": ["dist"]
 }

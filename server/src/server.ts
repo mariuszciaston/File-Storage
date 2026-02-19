@@ -2,8 +2,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 
+// load shared root env
 dotenv.config({ path: "../../.env" });
-// dotenv.config({ path: './server/.env' });
+
+// load server-specific env
+dotenv.config({ path: "./server/.env" });
 
 const isDev = process.env.NODE_ENV !== "production";
 const serverPort = isDev
