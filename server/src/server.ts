@@ -6,6 +6,7 @@ import passport from 'passport';
 import './config/passport';
 import errorHandler from './middlewares/errorHandler';
 import { sessionMiddleware } from './middlewares/session.middleware';
+import authRouter from './routes/authRouter';
 
 // load shared root env
 dotenv.config({ path: '../../.env' });
@@ -25,6 +26,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(sessionMiddleware);
 
 app.use(passport.session());
@@ -34,6 +38,8 @@ app.use((req, _res, next) => {
 	console.log(req.user);
 	next();
 });
+
+app.use('/login', authRouter);
 
 app.get('/api', (_req, res) => {
 	res.json({ fruits: ['apple', 'banana', 'orange'] });

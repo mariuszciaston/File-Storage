@@ -6,14 +6,18 @@ import { prisma } from '../lib/prisma';
 
 passport.use(
 	new LocalStrategy((username, password, done) => {
+		console.log('Login attempt:', { password: password ? '[HIDDEN]' : 'undefined', username });
 		prisma.user
 			.findUnique({ where: { username } })
 			.then((user) => {
+				console.log('User found:', user ? 'Yes' : 'No');
 				if (!user) {
 					done(null, false, { message: 'Incorrect username' });
 					return;
 				}
+
 				return bcrypt.compare(password, user.password).then((match) => {
+					console.log('Password match:', match);
 					if (!match) {
 						done(null, false, { message: 'Incorrect password' });
 						return;
