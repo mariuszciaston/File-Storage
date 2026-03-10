@@ -3,3 +3,7 @@
 body {
   font-family: "Google Sans", sans-serif;
 }
+
+main a {
+  @apply text-blue-500 underline;
+}
