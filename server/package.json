@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "clean": "rm -rf dist",
     "build": "tsc -p tsconfig.build.json",
-    "start": "NODE_ENV=production node dist/server.js",
+    "start": "NODE_ENV=production node dist/src/server.js",
     "db:wipe": "psql -d postgres -c \"DROP DATABASE IF EXISTS games_db\" && psql -d postgres -c \"CREATE DATABASE games_db\"",
     "db:seed": "node src/db/seed.ts",
     "prisma:reset": "npx prisma migrate reset",

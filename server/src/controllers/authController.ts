@@ -1,7 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import passport from 'passport';
 
-import { AuthUser } from '../types/types';
+import { AuthUser } from '../types/types.js';
 
 // import { validationResult } from 'express-validator';
 

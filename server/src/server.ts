@@ -3,10 +3,10 @@ import dotenv from 'dotenv';
 import express from 'express';
 import passport from 'passport';
 
-import './config/passport';
-import errorHandler from './middlewares/errorHandler';
-import { sessionMiddleware } from './middlewares/session.middleware';
-import authRouter from './routes/authRouter';
+import './config/passport.js';
+import errorHandler from './middlewares/errorHandler.js';
+import { sessionMiddleware } from './middlewares/session.middleware.js';
+import authRouter from './routes/authRouter.js';
 
 // load shared root env
 dotenv.config({ path: '../.env' });

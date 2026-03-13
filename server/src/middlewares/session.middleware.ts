@@ -1,7 +1,7 @@
 import { PrismaSessionStore } from '@quixo3/prisma-session-store';
 import expressSession from 'express-session';
 
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 
 if (!process.env.SESSION_SECRET) {
 	throw new Error('SESSION_SECRET is not defined');
