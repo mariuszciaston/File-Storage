@@ -8,7 +8,7 @@ export default function Header() {
           <img
             alt="folder icon"
             className="h-8 w-auto"
-            src="./public/android-chrome-192x192.png"
+            src="/android-chrome-192x192.png"
           />
           <span className="text-2xl font-bold whitespace-nowrap">
             File Storage

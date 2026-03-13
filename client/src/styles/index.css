@@ -7,3 +7,11 @@ body {
 main a {
   @apply text-blue-500 underline;
 }
+
+main input {
+  @apply rounded border border-gray-500 px-2 py-1;
+}
+
+main button {
+  @apply cursor-pointer rounded bg-blue-500 px-4 py-2 text-white;
+}
