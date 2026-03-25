@@ -18,6 +18,7 @@ const clientPort = isDev ? (process.env.VITE_CLIENT_DEV_PORT ?? 5173) : (process
 const app = express();
 
 const corsOptions = {
+	credentials: true,
 	origin: [`http://localhost:${clientPort}`],
 };
 
