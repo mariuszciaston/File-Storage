@@ -3,6 +3,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import Dashboard from "../pages/Dashboard";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
+import NotFound from "../pages/NotFound";
 import Register from "../pages/Register";
 
 export default [
@@ -37,5 +38,9 @@ export default [
       </ProtectedRoute>
     ),
     path: "/dashboard",
+  },
+  {
+    element: <NotFound />,
+    path: "*",
   },
 ];
