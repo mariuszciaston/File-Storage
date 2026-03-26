@@ -39,8 +39,8 @@ export default function Login() {
       );
 
       if (response.ok) {
-        const userData = await response.json();
-        login(userData);
+        const data = await response.json();
+        login(data.user);
         navigate("/dashboard");
       } else {
         const data = await response.json();
