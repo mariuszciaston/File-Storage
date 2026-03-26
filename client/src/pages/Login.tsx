@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Main from "../components/Main";
 import Wrapper from "../components/Wrapper";
+import { useAuth } from "../hooks/useAuth";
 import { useTitle } from "../hooks/useTitle";
 
 const isDev = import.meta.env.NODE_ENV !== "production";
@@ -16,6 +17,7 @@ const serverPort = isDev
 export default function Login() {
   useTitle("Login");
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ password: "", username: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,8 @@ export default function Login() {
       );
 
       if (response.ok) {
+        const userData = await response.json();
+        login(userData);
         navigate("/dashboard");
       } else {
         const data = await response.json();
