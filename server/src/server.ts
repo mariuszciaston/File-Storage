@@ -1,25 +1,29 @@
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
-import passport from 'passport';
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import passport from "passport";
 
-import './config/passport.js';
-import errorHandler from './middlewares/errorHandler.js';
-import { sessionMiddleware } from './middlewares/session.js';
-import router from './routes/router.js';
+import "./config/passport.js";
+import errorHandler from "./middlewares/errorHandler.js";
+import { sessionMiddleware } from "./middlewares/session.js";
+import router from "./routes/router.js";
 
 // load shared root env
-dotenv.config({ path: '../.env' });
+dotenv.config({ path: "../.env" });
 
-const isDev = process.env.NODE_ENV !== 'production';
-const serverPort = isDev ? (process.env.VITE_SERVER_DEV_PORT ?? 8080) : (process.env.VITE_SERVER_PROD_PORT ?? 8081);
-const clientPort = isDev ? (process.env.VITE_CLIENT_DEV_PORT ?? 5173) : (process.env.VITE_CLIENT_PROD_PORT ?? 4173);
+const isDev = process.env.NODE_ENV !== "production";
+const serverPort = isDev
+  ? (process.env.VITE_SERVER_DEV_PORT ?? 8080)
+  : (process.env.VITE_SERVER_PROD_PORT ?? 8081);
+const clientPort = isDev
+  ? (process.env.VITE_CLIENT_DEV_PORT ?? 5173)
+  : (process.env.VITE_CLIENT_PROD_PORT ?? 4173);
 
 const app = express();
 
 const corsOptions = {
-	credentials: true,
-	origin: [`http://localhost:${clientPort}`],
+  credentials: true,
+  origin: [`http://localhost:${clientPort}`],
 };
 
 app.use(cors(corsOptions));
@@ -32,16 +36,16 @@ app.use(sessionMiddleware);
 app.use(passport.session());
 
 app.use((req, _res, next) => {
-	console.log(req.session);
-	console.log(req.user);
-	next();
+  console.log(req.session);
+  console.log(req.user);
+  next();
 });
 
-app.use('/api', router);
+app.use("/api", router);
 
 app.use(errorHandler);
 
 app.listen(serverPort, (error) => {
-	if (error) throw error;
-	console.log(`Server is running on http://localhost:${serverPort}`);
+  if (error) throw error;
+  console.log(`Server is running on http://localhost:${serverPort}`);
 });
