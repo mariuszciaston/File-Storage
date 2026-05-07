@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/prisma.js';
 
 const pass = process.env.ADMIN_PASSWORD;
 if (!pass) throw new Error('ADMIN_PASSWORD is not defined');

@@ -1,15 +1,15 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "target": "ESNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "ignoreDeprecations": "6.0"
-  },
-  "include": ["src/**/*.ts", "prisma.config.ts", "prisma/**/*.ts"],
-  "exclude": ["dist"]
+	"compilerOptions": {
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "./dist",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"target": "ES2022",
+		"strict": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"ignoreDeprecations": "6.0"
+	},
+	"include": ["src/**/*.ts", "prisma.config.ts", "prisma/**/*.ts"],
+	"exclude": ["dist"]
 }
