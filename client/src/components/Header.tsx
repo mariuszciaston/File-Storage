@@ -32,16 +32,16 @@ export default function Header() {
         ) : (
           <>
             <Link
-              className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-              to="/login"
-            >
-              Login
-            </Link>
-            <Link
               className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
               to="/register"
             >
               Register
+            </Link>
+            <Link
+              className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              to="/login"
+            >
+              Login
             </Link>
           </>
         )}
