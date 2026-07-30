@@ -1,4 +1,4 @@
-function Upload() {
+export default function Upload() {
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -26,5 +26,3 @@ function Upload() {
     />
   );
 }
-
-export default Upload;
