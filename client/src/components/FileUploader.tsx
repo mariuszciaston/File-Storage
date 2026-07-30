@@ -1,4 +1,4 @@
-export default function Upload() {
+export default function FileUploader() {
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 

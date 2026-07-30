@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import { login, register } from '../controllers/authController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
-import upload from '../middlewares/upload.js';
+import { upload, validateFileType } from '../middlewares/upload.js';
 
 const router = Router();
 
@@ -25,18 +25,24 @@ router.get('/dashboard', requireAuth, (req, res) => {
 	res.json({ message: 'Dashboard data', user: req.user });
 });
 
-router.post('/upload', requireAuth, upload.single('file'), (req, res) => {
-	if (!req.file) {
-		return res.status(400).json({
-			error: 'No file uploaded',
-		});
-	}
+router.post(
+	'/upload',
+	requireAuth,
+	upload.single('file'),
+	validateFileType,
+	(req, res) => {
+		if (!req.file) {
+			return res.status(400).json({
+				error: 'No file uploaded',
+			});
+		}
 
-	res.json({
-		filename: req.file.filename,
-		message: 'File uploaded successfully',
-		path: req.file.path,
-	});
-});
+		res.json({
+			filename: req.file.filename,
+			message: 'File uploaded successfully',
+			path: req.file.path,
+		});
+	},
+);
 
 export default router;

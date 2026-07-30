@@ -1,7 +1,7 @@
+import FileUploader from "../components/FileUploader";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Main from "../components/Main";
-import Upload from "../components/Upload";
 import Wrapper from "../components/Wrapper";
 import { useAuth } from "../hooks/useAuth";
 import { useTitle } from "../hooks/useTitle";
@@ -19,7 +19,7 @@ export default function Dashboard() {
         <p>Dashboard page</p>
         <br />
 
-        <Upload />
+        <FileUploader />
       </Main>
       <Footer />
     </Wrapper>
