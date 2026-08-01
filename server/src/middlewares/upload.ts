@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { fileTypeFromBuffer } from 'file-type';
 import fs from 'fs/promises';
 import multer from 'multer';
+import path from 'path';
 
 const storage = multer.diskStorage({
 	destination: (_req, _file, cb) => {
@@ -9,7 +10,9 @@ const storage = multer.diskStorage({
 	},
 
 	filename: (_req, file, cb) => {
-		cb(null, `${Date.now()}-${file.originalname}`);
+		const ext = path.extname(file.originalname).toLowerCase();
+
+		cb(null, `${crypto.randomUUID()}${ext}`);
 	},
 });
 
