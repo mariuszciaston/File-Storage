@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
   engineType = "library"
 }
 
@@ -8,16 +8,53 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id       Int    @id @default(autoincrement())
-  fullname String
-  username String @unique
-  password String
-}
-
 model Session {
   id        String   @id
   sid       String   @unique
   data      String
   expiresAt DateTime
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  fullname  String
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folders Folder[]
+  files   File[]
+}
+
+model Folder {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  parentId Int?
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children Folder[] @relation("FolderHierarchy")
+
+  files File[]
+}
+
+model File {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  size Int
+  url  String
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  folderId Int?
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 }
