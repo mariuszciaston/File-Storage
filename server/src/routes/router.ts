@@ -1,6 +1,13 @@
 import { Router } from 'express';
 
 import { login, register } from '../controllers/authController.js';
+import { deleteFile, uploadFile } from '../controllers/fileController.js';
+import {
+	createFolder,
+	deleteFolder,
+	getFolders,
+	updateFolder,
+} from '../controllers/folderController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { upload, validateFileType } from '../middlewares/upload.js';
 
@@ -25,24 +32,18 @@ router.get('/dashboard', requireAuth, (req, res) => {
 	res.json({ message: 'Dashboard data', user: req.user });
 });
 
+router.get('/folders', requireAuth, getFolders);
+router.post('/folders', requireAuth, createFolder);
+router.patch('/folders/:id', requireAuth, updateFolder);
+router.delete('/folders/:id', requireAuth, deleteFolder);
+
 router.post(
-	'/upload',
+	'/files',
 	requireAuth,
 	upload.single('file'),
 	validateFileType,
-	(req, res) => {
-		if (!req.file) {
-			return res.status(400).json({
-				error: 'No file uploaded',
-			});
-		}
-
-		res.json({
-			filename: req.file.filename,
-			message: 'File uploaded successfully',
-			path: req.file.path,
-		});
-	},
+	uploadFile,
 );
+router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;

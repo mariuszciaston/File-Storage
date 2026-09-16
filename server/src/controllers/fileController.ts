@@ -1,0 +1,66 @@
+import { NextFunction, Request, Response } from 'express';
+import fs from 'fs/promises';
+
+import { prisma } from '../lib/prisma.js';
+import { User } from '../types/types.js';
+
+export const uploadFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+		const userId = (req.user as User).id;
+		const { folderId: rawFolderId } = req.body as { folderId?: string };
+		const folderId = rawFolderId ? Number(rawFolderId) : null;
+
+		if (folderId) {
+			const folder = await prisma.folder.findFirst({
+				where: { id: folderId, ownerId: userId },
+			});
+			if (!folder) {
+				await fs.unlink(req.file.path);
+				return res.status(404).json({ error: 'Folder not found' });
+			}
+		}
+
+		const file = await prisma.file.create({
+			data: {
+				folderId,
+				name: req.file.originalname,
+				ownerId: userId,
+				size: req.file.size,
+				url: req.file.path,
+			},
+		});
+
+		res.status(201).json(file);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const deleteFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as User).id;
+
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!file) return res.status(404).json({ error: 'File not found' });
+
+		await fs.unlink(file.url).catch(() => null);
+		await prisma.file.delete({ where: { id } });
+
+		res.json({ message: 'File deleted' });
+	} catch (error) {
+		next(error);
+	}
+};
