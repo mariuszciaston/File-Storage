@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs/promises';
 
+import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
-import { User } from '../types/types.js';
 
 export const uploadFile = async (
 	req: Request,
@@ -12,7 +12,7 @@ export const uploadFile = async (
 	try {
 		if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-		const userId = (req.user as User).id;
+		const userId = (req.user as UserModel).id;
 		const { folderId: rawFolderId } = req.body as { folderId?: string };
 		const folderId = rawFolderId ? Number(rawFolderId) : null;
 
@@ -49,7 +49,7 @@ export const deleteFile = async (
 ) => {
 	try {
 		const id = Number(req.params.id);
-		const userId = (req.user as User).id;
+		const userId = (req.user as UserModel).id;
 
 		const file = await prisma.file.findFirst({
 			where: { id, ownerId: userId },

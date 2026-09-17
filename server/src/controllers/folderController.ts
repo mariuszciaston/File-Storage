@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { FolderModel, UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
-import { User } from '../types/types.js';
 
 export const getFolders = async (
 	req: Request,
@@ -9,7 +9,7 @@ export const getFolders = async (
 	next: NextFunction,
 ) => {
 	try {
-		const userId = (req.user as User).id;
+		const userId = (req.user as UserModel).id;
 		const parentId = req.query.parentId ? Number(req.query.parentId) : null;
 
 		const folders = await prisma.folder.findMany({
@@ -29,8 +29,8 @@ export const createFolder = async (
 	next: NextFunction,
 ) => {
 	try {
-		const { name, parentId } = req.body as { name: string; parentId?: number };
-		const userId = (req.user as User).id;
+		const { name, parentId } = req.body as Pick<FolderModel, 'name' | 'parentId'>;
+		const userId = (req.user as UserModel).id;
 
 		if (parentId) {
 			const parent = await prisma.folder.findFirst({
@@ -57,8 +57,8 @@ export const updateFolder = async (
 ) => {
 	try {
 		const id = Number(req.params.id);
-		const userId = (req.user as User).id;
-		const { name } = req.body as { name: string };
+		const userId = (req.user as UserModel).id;
+		const { name } = req.body as Pick<FolderModel, 'name'>;
 
 		const folder = await prisma.folder.findFirst({
 			where: { id, ownerId: userId },
@@ -82,7 +82,7 @@ export const deleteFolder = async (
 ) => {
 	try {
 		const id = Number(req.params.id);
-		const userId = (req.user as User).id;
+		const userId = (req.user as UserModel).id;
 
 		const folder = await prisma.folder.findFirst({
 			where: { id, ownerId: userId },

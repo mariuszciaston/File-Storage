@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 
+import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
 
 passport.use(
@@ -33,7 +34,7 @@ passport.use(
 );
 
 passport.serializeUser((user: Express.User, done) => {
-	done(null, (user as { id: number }).id);
+	done(null, (user as UserModel).id);
 });
 
 passport.deserializeUser((id: number, done) => {

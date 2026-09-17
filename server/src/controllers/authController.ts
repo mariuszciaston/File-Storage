@@ -2,8 +2,8 @@ import bcrypt from 'bcryptjs';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import passport from 'passport';
 
+import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
-import { User } from '../types/types.js';
 
 export const register = async (
 	req: Request,
@@ -12,7 +12,7 @@ export const register = async (
 ) => {
 	try {
 		const { fullname, password, passwordConfirmation, username } =
-			req.body as User;
+			req.body as Pick<UserModel, 'fullname' | 'password' | 'username'> & { passwordConfirmation: string };
 
 		if (password !== passwordConfirmation) {
 			return res.status(400).json({ error: 'Passwords do not match' });
@@ -43,7 +43,7 @@ export const register = async (
 export const login = [
 	(req: Request, res: Response, next: NextFunction) => {
 		(
-			passport.authenticate('local', (err: unknown, user: false | User) => {
+			passport.authenticate('local', (err: unknown, user: false | UserModel) => {
 				if (err) return next(err);
 				if (!user)
 					return res.status(401).json({ error: 'Invalid credentials' });

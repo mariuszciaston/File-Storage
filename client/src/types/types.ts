@@ -15,6 +15,6 @@ export interface ProtectedRouteProps {
 
 export interface User {
   fullname: string;
-  id: string;
+  id: number;
   username: string;
 }
