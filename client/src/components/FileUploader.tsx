@@ -1,4 +1,10 @@
-export default function FileUploader() {
+export default function FileUploader({
+  folderId,
+  onUploaded,
+}: {
+  folderId?: number;
+  onUploaded?: () => void;
+}) {
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -12,15 +18,20 @@ export default function FileUploader() {
 
     const formData = new FormData();
     formData.append("file", file);
+    if (folderId != null) formData.append("folderId", String(folderId));
 
     const response = await fetch("/api/files", {
       body: formData,
       method: "POST",
     });
 
-    const data = await response.json();
+    if (response.ok) {
+      if (onUploaded) {
+        onUploaded();
+      }
+    }
 
-    console.log(data);
+    event.target.value = "";
   }
 
   return (

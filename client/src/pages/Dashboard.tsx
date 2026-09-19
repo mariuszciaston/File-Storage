@@ -1,4 +1,4 @@
-import FileUploader from "../components/FileUploader";
+import FolderView from "../components/FolderView";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Main from "../components/Main";
@@ -14,12 +14,8 @@ export default function Dashboard() {
     <Wrapper>
       <Header />
       <Main>
-        <h1>Hello {user?.fullname}!</h1>
-        <br />
-        <p>Dashboard page</p>
-        <br />
-
-        <FileUploader />
+        <h1 className="mb-4 text-xl font-bold">Hello {user?.fullname}!</h1>
+        <FolderView />
       </Main>
       <Footer />
     </Wrapper>

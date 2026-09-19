@@ -9,6 +9,22 @@ export interface AuthRedirectProps {
   children: React.ReactNode;
 }
 
+export interface FileItem {
+  folderId: null | number;
+  id: number;
+  name: string;
+  size: number;
+  url: string;
+}
+
+export interface Folder {
+  children: Folder[];
+  files: FileItem[];
+  id: number;
+  name: string;
+  parentId: null | number;
+}
+
 export interface ProtectedRouteProps {
   children: React.ReactNode;
 }

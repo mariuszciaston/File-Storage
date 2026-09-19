@@ -42,6 +42,24 @@ export const uploadFile = async (
 	}
 };
 
+export const getFiles = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const userId = (req.user as UserModel).id;
+		const folderId = req.query.folderId ? Number(req.query.folderId) : null;
+
+		const files = await prisma.file.findMany({
+			where: { folderId, ownerId: userId },
+		});
+		res.json(files);
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const deleteFile = async (
 	req: Request,
 	res: Response,

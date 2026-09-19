@@ -1,7 +1,11 @@
 import { Router } from 'express';
 
 import { login, register } from '../controllers/authController.js';
-import { deleteFile, uploadFile } from '../controllers/fileController.js';
+import {
+	deleteFile,
+	getFiles,
+	uploadFile,
+} from '../controllers/fileController.js';
 import {
 	createFolder,
 	deleteFolder,
@@ -37,6 +41,7 @@ router.post('/folders', requireAuth, createFolder);
 router.patch('/folders/:id', requireAuth, updateFolder);
 router.delete('/folders/:id', requireAuth, deleteFolder);
 
+router.get('/files', requireAuth, getFiles);
 router.post(
 	'/files',
 	requireAuth,
