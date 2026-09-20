@@ -35,8 +35,9 @@ export default function FileUploader({
   }
 
   return (
-    <input
-      accept="
+    <>
+      <input
+        accept="
   image/*,
   application/pdf,
   text/plain,
@@ -62,9 +63,17 @@ export default function FileUploader({
   .ods,
   .odp
 "
-      className="block w-full text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-blue-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:cursor-pointer"
-      onChange={handleFile}
-      type="file"
-    />
+        className="hidden"
+        id="file-upload"
+        onChange={handleFile}
+        type="file"
+      />
+      <label
+        className="flex cursor-pointer justify-center rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+        htmlFor="file-upload"
+      >
+        Upload file
+      </label>
+    </>
   );
 }
