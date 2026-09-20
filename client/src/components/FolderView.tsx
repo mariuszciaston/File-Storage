@@ -13,6 +13,7 @@ export default function FolderView() {
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [renamingId, setRenamingId] = useState<null | number>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [view, setView] = useState<"box" | "row">("row");
 
   const parentId = currentFolder?.id ?? null;
 
@@ -118,33 +119,69 @@ export default function FolderView() {
 
       {/* Right column: browser */}
       <div className="flex-1 space-y-4">
-        {/* Breadcrumbs */}
-        <nav className="flex flex-wrap items-center gap-1">
-          <button
-            className="cursor-pointer text-blue-600 hover:underline"
-            onClick={() => navigateTo(-1)}
-          >
-            Storage
-          </button>
-          {breadcrumbs.map((b, i) => (
-            <span className="flex items-center gap-1" key={b.id}>
-              <span>{">"}</span>
-              <button
-                className="cursor-pointer text-blue-600 hover:underline"
-                onClick={() => navigateTo(i)}
-              >
-                {b.name}
-              </button>
-            </span>
-          ))}
-        </nav>
+        {/* Breadcrumbs + view toggle */}
+        <div className="flex items-center justify-between">
+          <nav className="flex flex-wrap items-center gap-1">
+            <button
+              className="cursor-pointer text-blue-600 hover:underline"
+              onClick={() => navigateTo(-1)}
+            >
+              Storage
+            </button>
+            {breadcrumbs.map((b, i) => (
+              <span className="flex items-center gap-1" key={b.id}>
+                <span>{">"}</span>
+                <button
+                  className="cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => navigateTo(i)}
+                >
+                  {b.name}
+                </button>
+              </span>
+            ))}
+          </nav>
+          <div className="flex gap-1">
+            <button
+              className={`rounded px-4 py-2 ${
+                view === "row"
+                  ? "bg-blue-500 text-white"
+                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => setView("row")}
+              title="List view"
+            >
+              ☰ List
+            </button>
+            <button
+              className={`rounded px-4 py-2 ${
+                view === "box"
+                  ? "bg-blue-500 text-white"
+                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => setView("box")}
+              title="Grid view"
+            >
+              ⊞ Grid
+            </button>
+          </div>
+        </div>
 
         {/* Folders */}
         {folders.length > 0 && (
-          <ul className="space-y-1">
+          <ul
+            className={
+              view === "row"
+                ? "space-y-1"
+                : "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+            }
+          >
             {folders.map((folder) => (
               <li
-                className="flex items-center gap-2 rounded bg-white px-3 py-2"
+                className={
+                  view === "row"
+                    ? "flex items-center gap-2 rounded bg-white px-3 py-2"
+                    : "flex flex-col items-center gap-1 rounded bg-white p-3 text-center"
+                }
                 key={folder.id}
               >
                 {renamingId === folder.id ? (
@@ -174,27 +211,35 @@ export default function FolderView() {
                   </>
                 ) : (
                   <>
+                    {view === "box" && <span className="text-3xl">📁</span>}
                     <button
-                      className="flex-1 text-left text-sm font-medium hover:underline"
+                      className={
+                        view === "row"
+                          ? "flex-1 text-left text-sm font-medium hover:underline"
+                          : "text-sm font-medium hover:underline"
+                      }
                       onClick={() => openFolder(folder)}
                     >
-                      📁 {folder.name}
+                      {view === "row" && "📁 "}
+                      {folder.name}
                     </button>
-                    <button
-                      className="text-sm text-gray-500 hover:underline"
-                      onClick={() => {
-                        setRenamingId(folder.id);
-                        setRenameValue(folder.name);
-                      }}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      className="text-sm text-red-500 hover:underline"
-                      onClick={() => deleteFolder(folder.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className={view === "box" ? "flex gap-2" : "contents"}>
+                      <button
+                        className="text-sm text-gray-500 hover:underline"
+                        onClick={() => {
+                          setRenamingId(folder.id);
+                          setRenameValue(folder.name);
+                        }}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        className="text-sm text-red-500 hover:underline"
+                        onClick={() => deleteFolder(folder.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </>
                 )}
               </li>
@@ -204,14 +249,26 @@ export default function FolderView() {
 
         {/* Files */}
         {files.length > 0 && (
-          <ul className="space-y-1">
+          <ul
+            className={
+              view === "row"
+                ? "space-y-1"
+                : "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+            }
+          >
             {files.map((file) => (
               <li
-                className="flex items-center gap-2 rounded bg-white px-3 py-2 text-sm"
+                className={
+                  view === "row"
+                    ? "flex items-center gap-2 rounded bg-white px-3 py-2 text-sm"
+                    : "flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
+                }
                 key={file.id}
               >
-                <span className="flex-1">
-                  📄 {file.name}{" "}
+                {view === "box" && <span className="text-3xl">📄</span>}
+                <span className={view === "row" ? "flex-1" : ""}>
+                  {view === "row" && "📄 "}
+                  {file.name}{" "}
                   <span className="text-gray-400">
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
