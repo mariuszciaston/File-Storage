@@ -1,8 +1,25 @@
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs/promises';
+import path from 'path';
 
 import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
+
+export const downloadFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const file = await prisma.file.findFirst({ where: { id, ownerId: userId } });
+		if (!file) return res.status(404).json({ error: 'File not found' });
+		res.download(path.resolve(file.url), file.name);
+	} catch (error) {
+		next(error);
+	}
+};
 
 export const uploadFile = async (
 	req: Request,

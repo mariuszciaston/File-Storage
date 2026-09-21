@@ -228,7 +228,7 @@ export default function FolderView() {
                     {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
                   </th>
                 ))}
-                <th className="px-3 py-2" />
+                <th className="px-3 py-2 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -283,22 +283,19 @@ export default function FolderView() {
                     })}
                   </td>
                   <td className="px-3 py-2">
-                    <span className="flex gap-3">
+                    <span className="flex gap-2 text-gray-500">
+                      <button title="Share" className="hover:text-blue-500">🔗</button>
                       <button
-                        className="text-gray-500 hover:underline"
-                        onClick={() => {
-                          setRenamingId(folder.id);
-                          setRenameValue(folder.name);
-                        }}
-                      >
-                        Rename
-                      </button>
+                        title="Rename"
+                        className="hover:text-yellow-500"
+                        onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name); }}
+                      >✏️</button>
                       <button
-                        className="text-red-500 hover:underline"
+                        title="Delete"
+                        className="hover:text-red-500"
                         onClick={() => deleteFolder(folder.id)}
-                      >
-                        Delete
-                      </button>
+                      >🗑️</button>
+                      <button title="Star" className="hover:text-yellow-400">⭐</button>
                     </span>
                   </td>
                 </tr>
@@ -322,12 +319,21 @@ export default function FolderView() {
                     })}
                   </td>
                   <td className="px-3 py-2">
-                    <button
-                      className="text-red-500 hover:underline"
-                      onClick={() => deleteFile(file)}
-                    >
-                      Delete
-                    </button>
+                    <span className="flex gap-2 text-gray-500">
+                      <button title="Share" className="hover:text-blue-500">🔗</button>
+                      <a
+                        title="Download"
+                        className="hover:text-green-500"
+                        href={`/api/files/${file.id}/download`}
+                        download
+                      >⬇️</a>
+                      <button
+                        title="Delete"
+                        className="hover:text-red-500"
+                        onClick={() => deleteFile(file)}
+                      >🗑️</button>
+                      <button title="Star" className="hover:text-yellow-400">⭐</button>
+                    </span>
                   </td>
                 </tr>
               ))}

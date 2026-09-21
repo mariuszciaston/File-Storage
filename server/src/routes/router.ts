@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { login, register } from '../controllers/authController.js';
 import {
 	deleteFile,
+	downloadFile,
 	getFiles,
 	uploadFile,
 } from '../controllers/fileController.js';
@@ -49,6 +50,7 @@ router.post(
 	validateFileType,
 	uploadFile,
 );
+router.get('/files/:id/download', requireAuth, downloadFile);
 router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;
