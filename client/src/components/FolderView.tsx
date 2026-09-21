@@ -338,9 +338,9 @@ export default function FolderView() {
         {/* Grid view */}
         {view === "box" && (
           <>
-            {folders.length > 0 && (
+            {(folders.length > 0 || files.length > 0) && (
               <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {folders.map((folder) => (
+                {sortedFolders().map((folder) => (
                   <li
                     className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center"
                     key={folder.id}
@@ -400,11 +400,7 @@ export default function FolderView() {
                     )}
                   </li>
                 ))}
-              </ul>
-            )}
-            {files.length > 0 && (
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {files.map((file) => (
+                {sortedFiles().map((file) => (
                   <li
                     className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
                     key={file.id}
