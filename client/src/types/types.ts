@@ -14,6 +14,7 @@ export interface FileItem {
   id: number;
   name: string;
   size: number;
+  updatedAt: string;
   url: string;
 }
 
@@ -23,6 +24,7 @@ export interface Folder {
   id: number;
   name: string;
   parentId: null | number;
+  updatedAt: string;
 }
 
 export interface ProtectedRouteProps {

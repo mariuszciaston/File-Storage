@@ -14,6 +14,49 @@ export default function FolderView() {
   const [renamingId, setRenamingId] = useState<null | number>(null);
   const [renameValue, setRenameValue] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
+  type SortKey = "name" | "size" | "updatedAt";
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortAsc, setSortAsc] = useState(true);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortAsc((a) => !a);
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  }
+
+  function sortedFolders() {
+    return [...folders].sort((a, b) => {
+      const av =
+        sortKey === "updatedAt"
+          ? new Date(a.updatedAt).getTime()
+          : a.name.toLowerCase();
+      const bv =
+        sortKey === "updatedAt"
+          ? new Date(b.updatedAt).getTime()
+          : b.name.toLowerCase();
+      return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+    });
+  }
+
+  function sortedFiles() {
+    return [...files].sort((a, b) => {
+      const av =
+        sortKey === "size"
+          ? a.size
+          : sortKey === "updatedAt"
+            ? new Date(a.updatedAt).getTime()
+            : a.name.toLowerCase();
+      const bv =
+        sortKey === "size"
+          ? b.size
+          : sortKey === "updatedAt"
+            ? new Date(b.updatedAt).getTime()
+            : b.name.toLowerCase();
+      return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+    });
+  }
 
   const parentId = currentFolder?.id ?? null;
 
@@ -166,66 +209,83 @@ export default function FolderView() {
           </div>
         </div>
 
-        {/* Folders */}
-        {folders.length > 0 && (
-          <ul
-            className={
-              view === "row"
-                ? "space-y-1"
-                : "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
-            }
-          >
-            {folders.map((folder) => (
-              <li
-                className={
-                  view === "row"
-                    ? "flex items-center gap-2 rounded bg-white px-3 py-2"
-                    : "flex flex-col items-center gap-1 rounded bg-white p-3 text-center"
-                }
-                key={folder.id}
-              >
-                {renamingId === folder.id ? (
-                  <>
-                    <input
-                      autoFocus
-                      className="rounded border px-2 py-0.5 text-sm"
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") renameFolder(folder.id);
-                        if (e.key === "Escape") setRenamingId(null);
-                      }}
-                      value={renameValue}
-                    />
-                    <button
-                      className="text-sm text-green-600 hover:underline"
-                      onClick={() => renameFolder(folder.id)}
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="text-sm text-gray-500 hover:underline"
-                      onClick={() => setRenamingId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {view === "box" && <span className="text-3xl">📁</span>}
-                    <button
-                      className={
-                        view === "row"
-                          ? "flex-1 text-left text-sm font-medium hover:underline"
-                          : "text-sm font-medium hover:underline"
-                      }
-                      onClick={() => openFolder(folder)}
-                    >
-                      {view === "row" && "📁 "}
-                      {folder.name}
-                    </button>
-                    <div className={view === "box" ? "flex gap-2" : "contents"}>
+        {/* List view: sortable table */}
+        {view === "row" && (folders.length > 0 || files.length > 0) && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-gray-500">
+                {(["name", "size", "updatedAt"] as const).map((key) => (
+                  <th
+                    className="cursor-pointer px-3 py-2 select-none hover:text-gray-800"
+                    key={key}
+                    onClick={() => toggleSort(key)}
+                  >
+                    {key === "name"
+                      ? "Name"
+                      : key === "size"
+                        ? "Size"
+                        : "Last modified"}
+                    {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
+                  </th>
+                ))}
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {sortedFolders().map((folder) => (
+                <tr
+                  className="border-b bg-white hover:bg-gray-50"
+                  key={`folder-${folder.id}`}
+                >
+                  <td className="px-3 py-2">
+                    {renamingId === folder.id ? (
+                      <span className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          className="rounded border px-2 py-0.5 text-sm"
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") renameFolder(folder.id);
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          value={renameValue}
+                        />
+                        <button
+                          className="text-green-600 hover:underline"
+                          onClick={() => renameFolder(folder.id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="text-gray-500 hover:underline"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
                       <button
-                        className="text-sm text-gray-500 hover:underline"
+                        className="font-medium hover:underline"
+                        onClick={() => openFolder(folder)}
+                      >
+                        📁 {folder.name}
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-gray-400">—</td>
+                  <td className="px-3 py-2 text-gray-400">
+                    {new Date(folder.updatedAt).toLocaleString(undefined, {
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      month: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="flex gap-3">
+                      <button
+                        className="text-gray-500 hover:underline"
                         onClick={() => {
                           setRenamingId(folder.id);
                           setRenameValue(folder.name);
@@ -234,54 +294,137 @@ export default function FolderView() {
                         Rename
                       </button>
                       <button
-                        className="text-sm text-red-500 hover:underline"
+                        className="text-red-500 hover:underline"
                         onClick={() => deleteFolder(folder.id)}
                       >
                         Delete
                       </button>
-                    </div>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {sortedFiles().map((file) => (
+                <tr
+                  className="border-b bg-white hover:bg-gray-50"
+                  key={`file-${file.id}`}
+                >
+                  <td className="px-3 py-2">📄 {file.name}</td>
+                  <td className="px-3 py-2 text-gray-400">
+                    {(file.size / 1024).toFixed(1)} KB
+                  </td>
+                  <td className="px-3 py-2 text-gray-400">
+                    {new Date(file.updatedAt).toLocaleString(undefined, {
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      month: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      className="text-red-500 hover:underline"
+                      onClick={() => deleteFile(file)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
 
-        {/* Files */}
-        {files.length > 0 && (
-          <ul
-            className={
-              view === "row"
-                ? "space-y-1"
-                : "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
-            }
-          >
-            {files.map((file) => (
-              <li
-                className={
-                  view === "row"
-                    ? "flex items-center gap-2 rounded bg-white px-3 py-2 text-sm"
-                    : "flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
-                }
-                key={file.id}
-              >
-                {view === "box" && <span className="text-3xl">📄</span>}
-                <span className={view === "row" ? "flex-1" : ""}>
-                  {view === "row" && "📄 "}
-                  {file.name}{" "}
-                  <span className="text-gray-400">
-                    ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                </span>
-                <button
-                  className="text-red-500 hover:underline"
-                  onClick={() => deleteFile(file)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+        {/* Grid view */}
+        {view === "box" && (
+          <>
+            {folders.length > 0 && (
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {folders.map((folder) => (
+                  <li
+                    className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center"
+                    key={folder.id}
+                  >
+                    {renamingId === folder.id ? (
+                      <>
+                        <input
+                          autoFocus
+                          className="rounded border px-2 py-0.5 text-sm"
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") renameFolder(folder.id);
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          value={renameValue}
+                        />
+                        <button
+                          className="text-sm text-green-600 hover:underline"
+                          onClick={() => renameFolder(folder.id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="text-sm text-gray-500 hover:underline"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-3xl">📁</span>
+                        <button
+                          className="text-sm font-medium hover:underline"
+                          onClick={() => openFolder(folder)}
+                        >
+                          {folder.name}
+                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            className="text-sm text-gray-500 hover:underline"
+                            onClick={() => {
+                              setRenamingId(folder.id);
+                              setRenameValue(folder.name);
+                            }}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            className="text-sm text-red-500 hover:underline"
+                            onClick={() => deleteFolder(folder.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {files.length > 0 && (
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {files.map((file) => (
+                  <li
+                    className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
+                    key={file.id}
+                  >
+                    <span className="text-3xl">📄</span>
+                    <span>{file.name}</span>
+                    <span className="text-gray-400">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
+                    <button
+                      className="text-red-500 hover:underline"
+                      onClick={() => deleteFile(file)}
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
       {/* New folder modal */}
