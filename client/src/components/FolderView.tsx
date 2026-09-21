@@ -237,12 +237,17 @@ export default function FolderView() {
                   className="border-b bg-white hover:bg-gray-50"
                   key={`folder-${folder.id}`}
                 >
-                  <td className="px-3 py-2">
+                  <td className="relative px-3 py-2">
+                    {renamingId === folder.id && (
+                      <span className="invisible font-medium">
+                        📁 {folder.name}
+                      </span>
+                    )}
                     {renamingId === folder.id ? (
-                      <span className="flex items-center gap-2">
+                      <span className="absolute inset-0 flex items-center gap-2 px-3">
                         <input
                           autoFocus
-                          className="rounded border px-2 py-0.5 text-sm"
+                          className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") renameFolder(folder.id);
@@ -251,13 +256,13 @@ export default function FolderView() {
                           value={renameValue}
                         />
                         <button
-                          className="text-green-600 hover:underline"
+                          className="shrink-0 text-green-600 hover:underline"
                           onClick={() => renameFolder(folder.id)}
                         >
                           Save
                         </button>
                         <button
-                          className="text-gray-500 hover:underline"
+                          className="shrink-0 text-gray-500 hover:underline"
                           onClick={() => setRenamingId(null)}
                         >
                           Cancel
@@ -284,18 +289,29 @@ export default function FolderView() {
                   </td>
                   <td className="px-3 py-2">
                     <span className="flex gap-2 text-gray-500">
-                      <button title="Share" className="hover:text-blue-500">🔗</button>
+                      <button className="hover:text-blue-500" title="Share">
+                        🔗
+                      </button>
                       <button
-                        title="Rename"
                         className="hover:text-yellow-500"
-                        onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name); }}
-                      >✏️</button>
+                        onClick={() => {
+                          setRenamingId(folder.id);
+                          setRenameValue(folder.name);
+                        }}
+                        title="Rename"
+                      >
+                        ✏️
+                      </button>
                       <button
-                        title="Delete"
                         className="hover:text-red-500"
                         onClick={() => deleteFolder(folder.id)}
-                      >🗑️</button>
-                      <button title="Star" className="hover:text-yellow-400">⭐</button>
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                      <button className="hover:text-yellow-400" title="Star">
+                        ⭐
+                      </button>
                     </span>
                   </td>
                 </tr>
@@ -320,19 +336,27 @@ export default function FolderView() {
                   </td>
                   <td className="px-3 py-2">
                     <span className="flex gap-2 text-gray-500">
-                      <button title="Share" className="hover:text-blue-500">🔗</button>
+                      <button className="hover:text-blue-500" title="Share">
+                        🔗
+                      </button>
                       <a
-                        title="Download"
                         className="hover:text-green-500"
-                        href={`/api/files/${file.id}/download`}
                         download
-                      >⬇️</a>
+                        href={`/api/files/${file.id}/download`}
+                        title="Download"
+                      >
+                        ⬇️
+                      </a>
                       <button
-                        title="Delete"
                         className="hover:text-red-500"
                         onClick={() => deleteFile(file)}
-                      >🗑️</button>
-                      <button title="Star" className="hover:text-yellow-400">⭐</button>
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                      <button className="hover:text-yellow-400" title="Star">
+                        ⭐
+                      </button>
                     </span>
                   </td>
                 </tr>
