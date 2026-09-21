@@ -5,12 +5,14 @@ import {
 	deleteFile,
 	downloadFile,
 	getFiles,
+	toggleFileStar,
 	uploadFile,
 } from '../controllers/fileController.js';
 import {
 	createFolder,
 	deleteFolder,
 	getFolders,
+	toggleFolderStar,
 	updateFolder,
 } from '../controllers/folderController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
@@ -39,6 +41,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
 
 router.get('/folders', requireAuth, getFolders);
 router.post('/folders', requireAuth, createFolder);
+router.patch('/folders/:id/star', requireAuth, toggleFolderStar);
 router.patch('/folders/:id', requireAuth, updateFolder);
 router.delete('/folders/:id', requireAuth, deleteFolder);
 
@@ -51,6 +54,7 @@ router.post(
 	uploadFile,
 );
 router.get('/files/:id/download', requireAuth, downloadFile);
+router.patch('/files/:id/star', requireAuth, toggleFileStar);
 router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;

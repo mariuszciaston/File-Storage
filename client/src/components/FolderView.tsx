@@ -14,6 +14,7 @@ export default function FolderView() {
   const [renamingId, setRenamingId] = useState<null | number>(null);
   const [renameValue, setRenameValue] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
+  const [showStarred, setShowStarred] = useState(false);
   type SortKey = "name" | "size" | "updatedAt";
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
@@ -27,35 +28,39 @@ export default function FolderView() {
   }
 
   function sortedFolders() {
-    return [...folders].sort((a, b) => {
-      const av =
-        sortKey === "updatedAt"
-          ? new Date(a.updatedAt).getTime()
-          : a.name.toLowerCase();
-      const bv =
-        sortKey === "updatedAt"
-          ? new Date(b.updatedAt).getTime()
-          : b.name.toLowerCase();
-      return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
-    });
+    return [...folders]
+      .filter((f) => !showStarred || f.starred)
+      .sort((a, b) => {
+        const av =
+          sortKey === "updatedAt"
+            ? new Date(a.updatedAt).getTime()
+            : a.name.toLowerCase();
+        const bv =
+          sortKey === "updatedAt"
+            ? new Date(b.updatedAt).getTime()
+            : b.name.toLowerCase();
+        return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+      });
   }
 
   function sortedFiles() {
-    return [...files].sort((a, b) => {
-      const av =
-        sortKey === "size"
-          ? a.size
-          : sortKey === "updatedAt"
-            ? new Date(a.updatedAt).getTime()
-            : a.name.toLowerCase();
-      const bv =
-        sortKey === "size"
-          ? b.size
-          : sortKey === "updatedAt"
-            ? new Date(b.updatedAt).getTime()
-            : b.name.toLowerCase();
-      return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
-    });
+    return [...files]
+      .filter((f) => !showStarred || f.starred)
+      .sort((a, b) => {
+        const av =
+          sortKey === "size"
+            ? a.size
+            : sortKey === "updatedAt"
+              ? new Date(a.updatedAt).getTime()
+              : a.name.toLowerCase();
+        const bv =
+          sortKey === "size"
+            ? b.size
+            : sortKey === "updatedAt"
+              ? new Date(b.updatedAt).getTime()
+              : b.name.toLowerCase();
+        return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+      });
   }
 
   const parentId = currentFolder?.id ?? null;
@@ -128,6 +133,28 @@ export default function FolderView() {
     if (res.ok) load();
   }
 
+  async function toggleFileStar(file: FileItem) {
+    const res = await fetch(`/api/files/${file.id}/star`, { method: "PATCH" });
+    if (res.ok) {
+      const updated: FileItem = await res.json();
+      setFiles((prev) => prev.map((f) => (f.id === file.id ? updated : f)));
+    }
+  }
+
+  async function toggleFolderStar(folder: Folder) {
+    const res = await fetch(`/api/folders/${folder.id}/star`, {
+      method: "PATCH",
+    });
+    if (res.ok) {
+      const updated: Folder = await res.json();
+      setFolders((prev) =>
+        prev.map((f) =>
+          f.id === folder.id ? { ...f, starred: updated.starred } : f,
+        ),
+      );
+    }
+  }
+
   function openFolder(folder: Folder) {
     setBreadcrumbs((prev) => [...prev, folder]);
     setCurrentFolder(folder);
@@ -158,6 +185,28 @@ export default function FolderView() {
 
         {/* Upload */}
         <FileUploader folderId={parentId ?? undefined} onUploaded={load} />
+        <hr></hr>
+        {/* Starred */}
+        <button
+          className={`cursor-pointer rounded px-4 py-2 text-left ${
+            !showStarred
+              ? "bg-blue-500 text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+          onClick={() => setShowStarred(false)}
+        >
+          All
+        </button>
+        <button
+          className={`cursor-pointer rounded px-4 py-2 text-left ${
+            showStarred
+              ? "bg-yellow-400 text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+          onClick={() => setShowStarred(true)}
+        >
+          ★ Starred
+        </button>
       </div>
 
       {/* Right column: browser */}
@@ -309,8 +358,16 @@ export default function FolderView() {
                       >
                         🗑️
                       </button>
-                      <button className="hover:text-yellow-400" title="Star">
-                        ⭐
+                      <button
+                        className={
+                          folder.starred
+                            ? "text-yellow-400"
+                            : "hover:text-yellow-400"
+                        }
+                        onClick={() => toggleFolderStar(folder)}
+                        title={folder.starred ? "Unstar" : "Star"}
+                      >
+                        {folder.starred ? "★" : "☆"}
                       </button>
                     </span>
                   </td>
@@ -354,8 +411,16 @@ export default function FolderView() {
                       >
                         🗑️
                       </button>
-                      <button className="hover:text-yellow-400" title="Star">
-                        ⭐
+                      <button
+                        className={
+                          file.starred
+                            ? "text-yellow-400"
+                            : "hover:text-yellow-400"
+                        }
+                        onClick={() => toggleFileStar(file)}
+                        title={file.starred ? "Unstar" : "Star"}
+                      >
+                        {file.starred ? "★" : "☆"}
                       </button>
                     </span>
                   </td>
@@ -425,6 +490,13 @@ export default function FolderView() {
                           >
                             Delete
                           </button>
+                          <button
+                            className={`text-sm ${folder.starred ? "text-yellow-400" : "text-gray-500 hover:text-yellow-400"}`}
+                            onClick={() => toggleFolderStar(folder)}
+                            title={folder.starred ? "Unstar" : "Star"}
+                          >
+                            {folder.starred ? "★" : "☆"}
+                          </button>
                         </div>
                       </>
                     )}
@@ -440,12 +512,25 @@ export default function FolderView() {
                     <span className="text-gray-400">
                       {(file.size / 1024).toFixed(1)} KB
                     </span>
-                    <button
-                      className="text-red-500 hover:underline"
-                      onClick={() => deleteFile(file)}
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="text-red-500 hover:underline"
+                        onClick={() => deleteFile(file)}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        className={
+                          file.starred
+                            ? "text-yellow-400"
+                            : "text-gray-500 hover:text-yellow-400"
+                        }
+                        onClick={() => toggleFileStar(file)}
+                        title={file.starred ? "Unstar" : "Star"}
+                      >
+                        {file.starred ? "★" : "☆"}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

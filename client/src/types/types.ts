@@ -14,6 +14,7 @@ export interface FileItem {
   id: number;
   name: string;
   size: number;
+  starred: boolean;
   updatedAt: string;
   url: string;
 }
@@ -24,6 +25,7 @@ export interface Folder {
   id: number;
   name: string;
   parentId: null | number;
+  starred: boolean;
   updatedAt: string;
 }
 

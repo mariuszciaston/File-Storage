@@ -77,6 +77,26 @@ export const getFiles = async (
 	}
 };
 
+export const toggleFileStar = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const file = await prisma.file.findFirst({ where: { id, ownerId: userId } });
+		if (!file) return res.status(404).json({ error: 'File not found' });
+		const updated = await prisma.file.update({
+			data: { starred: !file.starred },
+			where: { id },
+		});
+		res.json(updated);
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const deleteFile = async (
 	req: Request,
 	res: Response,

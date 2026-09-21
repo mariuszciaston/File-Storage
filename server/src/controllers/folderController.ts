@@ -75,6 +75,26 @@ export const updateFolder = async (
 	}
 };
 
+export const toggleFolderStar = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const folder = await prisma.folder.findFirst({ where: { id, ownerId: userId } });
+		if (!folder) return res.status(404).json({ error: 'Folder not found' });
+		const updated = await prisma.folder.update({
+			data: { starred: !folder.starred },
+			where: { id },
+		});
+		res.json(updated);
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const deleteFolder = async (
 	req: Request,
 	res: Response,

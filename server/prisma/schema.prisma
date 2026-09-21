@@ -30,6 +30,7 @@ model User {
 model Folder {
   id        Int      @id @default(autoincrement())
   name      String
+  starred   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -46,6 +47,7 @@ model Folder {
 model File {
   id        Int      @id @default(autoincrement())
   name      String
+  starred   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
