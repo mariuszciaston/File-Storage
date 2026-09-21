@@ -5,6 +5,7 @@ import {
 	deleteFile,
 	downloadFile,
 	getFiles,
+	previewFile,
 	toggleFileStar,
 	uploadFile,
 } from '../controllers/fileController.js';
@@ -53,6 +54,7 @@ router.post(
 	validateFileType,
 	uploadFile,
 );
+router.get('/files/:id/preview', requireAuth, previewFile);
 router.get('/files/:id/download', requireAuth, downloadFile);
 router.patch('/files/:id/star', requireAuth, toggleFileStar);
 router.delete('/files/:id', requireAuth, deleteFile);

@@ -5,6 +5,24 @@ import path from 'path';
 import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
 
+export const previewFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!file) return res.status(404).json({ error: 'File not found' });
+		res.sendFile(path.resolve(file.url));
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const downloadFile = async (
 	req: Request,
 	res: Response,
@@ -13,7 +31,9 @@ export const downloadFile = async (
 	try {
 		const id = Number(req.params.id);
 		const userId = (req.user as UserModel).id;
-		const file = await prisma.file.findFirst({ where: { id, ownerId: userId } });
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 		res.download(path.resolve(file.url), file.name);
 	} catch (error) {
@@ -85,7 +105,9 @@ export const toggleFileStar = async (
 	try {
 		const id = Number(req.params.id);
 		const userId = (req.user as UserModel).id;
-		const file = await prisma.file.findFirst({ where: { id, ownerId: userId } });
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 		const updated = await prisma.file.update({
 			data: { starred: !file.starred },

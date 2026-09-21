@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { FileItem, Folder } from "../types/types";
 
+import FilePreview from "./FilePreview";
 import FileUploader from "./FileUploader";
 
 export default function FolderView() {
@@ -15,6 +16,7 @@ export default function FolderView() {
   const [renameValue, setRenameValue] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
   const [showStarred, setShowStarred] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   type SortKey = "name" | "size" | "updatedAt";
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
@@ -378,7 +380,14 @@ export default function FolderView() {
                   className="border-b bg-white hover:bg-gray-50"
                   key={`file-${file.id}`}
                 >
-                  <td className="px-3 py-2">📄 {file.name}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      className="hover:underline"
+                      onClick={() => setPreviewFile(file)}
+                    >
+                      📄 {file.name}
+                    </button>
+                  </td>
                   <td className="px-3 py-2 text-gray-400">
                     {(file.size / 1024).toFixed(1)} KB
                   </td>
@@ -507,8 +516,18 @@ export default function FolderView() {
                     className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
                     key={file.id}
                   >
-                    <span className="text-3xl">📄</span>
-                    <span>{file.name}</span>
+                    <button
+                      className="text-3xl"
+                      onClick={() => setPreviewFile(file)}
+                    >
+                      📄
+                    </button>
+                    <button
+                      className="hover:underline"
+                      onClick={() => setPreviewFile(file)}
+                    >
+                      {file.name}
+                    </button>
                     <span className="text-gray-400">
                       {(file.size / 1024).toFixed(1)} KB
                     </span>
@@ -538,6 +557,9 @@ export default function FolderView() {
           </>
         )}
       </div>
+      {previewFile && (
+        <FilePreview file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
       {/* New folder modal */}
       {showNewFolderModal && (
         <div
