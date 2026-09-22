@@ -26,9 +26,10 @@ export default function FileUploader({
     });
 
     if (response.ok) {
-      if (onUploaded) {
-        onUploaded();
-      }
+      if (onUploaded) onUploaded();
+    } else {
+      const { error } = await response.json();
+      alert(error ?? "Upload failed.");
     }
 
     event.target.value = "";
@@ -38,7 +39,14 @@ export default function FileUploader({
     <>
       <input
         accept="
-  image/*,
+  image/bmp,
+	image/gif,
+	image/jpeg,
+	image/png,
+  image/svg+xml,
+	image/tiff,
+	image/webp,
+
   application/pdf,
   text/plain,
 

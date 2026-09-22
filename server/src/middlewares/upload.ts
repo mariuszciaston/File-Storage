@@ -34,6 +34,7 @@ const ALLOWED_MIME_TYPES = new Set([
 	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/xml',
 	'image/bmp',
 	'image/gif',
 	'image/jpeg',
