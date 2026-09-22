@@ -483,24 +483,33 @@ export default function FolderView() {
                         >
                           {folder.name}
                         </button>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 text-gray-500">
+                          <button className="hover:text-blue-500" title="Share">
+                            🔗
+                          </button>
                           <button
-                            className="text-sm text-gray-500 hover:underline"
+                            className="hover:text-yellow-500"
                             onClick={() => {
                               setRenamingId(folder.id);
                               setRenameValue(folder.name);
                             }}
+                            title="Rename"
                           >
-                            Rename
+                            ✏️
                           </button>
                           <button
-                            className="text-sm text-red-500 hover:underline"
+                            className="hover:text-red-500"
                             onClick={() => deleteFolder(folder.id)}
+                            title="Delete"
                           >
-                            Delete
+                            🗑️
                           </button>
                           <button
-                            className={`text-sm ${folder.starred ? "text-yellow-400" : "text-gray-500 hover:text-yellow-400"}`}
+                            className={
+                              folder.starred
+                                ? "text-yellow-400"
+                                : "hover:text-yellow-400"
+                            }
                             onClick={() => toggleFolderStar(folder)}
                             title={folder.starred ? "Unstar" : "Star"}
                           >
@@ -528,21 +537,30 @@ export default function FolderView() {
                     >
                       {file.name}
                     </button>
-                    <span className="text-gray-400">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        className="text-red-500 hover:underline"
-                        onClick={() => deleteFile(file)}
+                    <div className="flex gap-2 text-gray-500">
+                      <button className="hover:text-blue-500" title="Share">
+                        🔗
+                      </button>
+                      <a
+                        className="hover:text-green-500"
+                        download
+                        href={`/api/files/${file.id}/download`}
+                        title="Download"
                       >
-                        Delete
+                        ⬇️
+                      </a>
+                      <button
+                        className="hover:text-red-500"
+                        onClick={() => deleteFile(file)}
+                        title="Delete"
+                      >
+                        🗑️
                       </button>
                       <button
                         className={
                           file.starred
                             ? "text-yellow-400"
-                            : "text-gray-500 hover:text-yellow-400"
+                            : "hover:text-yellow-400"
                         }
                         onClick={() => toggleFileStar(file)}
                         title={file.starred ? "Unstar" : "Star"}
