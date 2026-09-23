@@ -17,7 +17,12 @@ import {
 	updateFolder,
 } from '../controllers/folderController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
-import { upload, validateFileType } from '../middlewares/upload.js';
+import { upload } from '../middlewares/upload.js';
+import { validate } from '../middlewares/validate.js';
+import {
+	fileUploadValidator,
+	folderNameValidator,
+} from '../middlewares/validators.js';
 
 const router = Router();
 
@@ -41,9 +46,21 @@ router.get('/dashboard', requireAuth, (req, res) => {
 });
 
 router.get('/folders', requireAuth, getFolders);
-router.post('/folders', requireAuth, createFolder);
+router.post(
+	'/folders',
+	requireAuth,
+	folderNameValidator,
+	validate,
+	createFolder,
+);
 router.patch('/folders/:id/star', requireAuth, toggleFolderStar);
-router.patch('/folders/:id', requireAuth, updateFolder);
+router.patch(
+	'/folders/:id',
+	requireAuth,
+	folderNameValidator,
+	validate,
+	updateFolder,
+);
 router.delete('/folders/:id', requireAuth, deleteFolder);
 
 router.get('/files', requireAuth, getFiles);
@@ -51,7 +68,8 @@ router.post(
 	'/files',
 	requireAuth,
 	upload.single('file'),
-	validateFileType,
+	fileUploadValidator,
+	validate,
 	uploadFile,
 );
 router.get('/files/:id/preview', requireAuth, previewFile);
