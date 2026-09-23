@@ -28,8 +28,8 @@ export default function FileUploader({
     if (response.ok) {
       if (onUploaded) onUploaded();
     } else {
-      const { error } = await response.json();
-      alert(error ?? "Upload failed.");
+      const data = await response.json();
+      alert(data.errors?.[0]?.msg ?? data.error ?? "Upload failed.");
     }
 
     event.target.value = "";

@@ -12,6 +12,7 @@ export default function FolderView() {
   const [breadcrumbs, setBreadcrumbs] = useState<Folder[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [newFolderError, setNewFolderError] = useState("");
   const [renamingId, setRenamingId] = useState<null | number>(null);
   const [renameValue, setRenameValue] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
@@ -97,7 +98,10 @@ export default function FolderView() {
   }, [parentId]);
 
   async function createFolder() {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim()) {
+      setNewFolderError("Folder name cannot be empty");
+      return;
+    }
     const res = await fetch("/api/folders", {
       body: JSON.stringify({ name: newFolderName.trim(), parentId }),
       headers: { "Content-Type": "application/json" },
@@ -105,8 +109,12 @@ export default function FolderView() {
     });
     if (res.ok) {
       setNewFolderName("");
+      setNewFolderError("");
       setShowNewFolderModal(false);
       load();
+    } else {
+      const data = await res.json();
+      setNewFolderError(data.errors?.[0]?.msg ?? "Failed to create folder");
     }
   }
 
@@ -582,7 +590,10 @@ export default function FolderView() {
       {showNewFolderModal && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black/40"
-          onClick={() => setShowNewFolderModal(false)}
+          onClick={() => {
+            setShowNewFolderModal(false);
+            setNewFolderError("");
+          }}
         >
           <div
             className="flex flex-col gap-3 rounded-lg bg-white p-6 shadow-lg"
@@ -591,19 +602,31 @@ export default function FolderView() {
             <h2 className="text-sm font-semibold">New folder</h2>
             <input
               autoFocus
-              className="rounded border px-2 py-1 text-sm"
-              onChange={(e) => setNewFolderName(e.target.value)}
+              className={`rounded border px-2 py-1 text-sm ${newFolderError ? "border-red-400" : ""}`}
+              onChange={(e) => {
+                setNewFolderName(e.target.value);
+                setNewFolderError("");
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") createFolder();
-                if (e.key === "Escape") setShowNewFolderModal(false);
+                if (e.key === "Escape") {
+                  setShowNewFolderModal(false);
+                  setNewFolderError("");
+                }
               }}
               placeholder="Folder name"
               value={newFolderName}
             />
+            {newFolderError && (
+              <p className="text-xs text-red-500">{newFolderError}</p>
+            )}
             <div className="flex justify-end gap-2">
               <button
                 className="rounded px-3 py-1 text-sm text-gray-500 hover:bg-gray-100"
-                onClick={() => setShowNewFolderModal(false)}
+                onClick={() => {
+                  setShowNewFolderModal(false);
+                  setNewFolderError("");
+                }}
               >
                 Cancel
               </button>
