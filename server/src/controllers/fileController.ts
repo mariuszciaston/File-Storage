@@ -79,6 +79,30 @@ export const uploadFile = async (
 	}
 };
 
+export const searchItems = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const userId = (req.user as UserModel).id;
+		const q = (typeof req.query.q === 'string' ? req.query.q : '').trim();
+		if (!q) return res.json({ files: [], folders: [] });
+
+		const [folders, files] = await Promise.all([
+			prisma.folder.findMany({
+				where: { name: { contains: q, mode: 'insensitive' }, ownerId: userId },
+			}),
+			prisma.file.findMany({
+				where: { name: { contains: q, mode: 'insensitive' }, ownerId: userId },
+			}),
+		]);
+		res.json({ files, folders });
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const getFiles = async (
 	req: Request,
 	res: Response,

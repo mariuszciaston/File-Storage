@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { FileItem, Folder } from "../types/types";
 
@@ -21,6 +21,27 @@ export default function FolderView() {
   type SortKey = "name" | "size" | "updatedAt";
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<null | {
+    files: FileItem[];
+    folders: Folder[];
+  }>(null);
+
+  const searchTimer = useRef<null | ReturnType<typeof setTimeout>>(null);
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!q.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`);
+      if (res.ok) setSearchResults(await res.json());
+    }, 300);
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc((a) => !a);
@@ -221,6 +242,15 @@ export default function FolderView() {
 
       {/* Right column: browser */}
       <div className="flex-1 space-y-4">
+        {/* Search */}
+        <input
+          className="w-full rounded border px-3 py-1.5 text-sm"
+          onChange={handleSearchChange}
+          placeholder="Search files and folders…"
+          type="search"
+          value={searchQuery}
+        />
+
         {/* Breadcrumbs + view toggle */}
         <div className="flex items-center justify-between">
           <nav className="flex flex-wrap items-center gap-1">
@@ -268,187 +298,246 @@ export default function FolderView() {
           </div>
         </div>
 
-        {/* List view: sortable table */}
-        {view === "row" && (folders.length > 0 || files.length > 0) && (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-gray-500">
-                {(["name", "size", "updatedAt"] as const).map((key) => (
-                  <th
-                    className="cursor-pointer px-3 py-2 select-none hover:text-gray-800"
-                    key={key}
-                    onClick={() => toggleSort(key)}
-                  >
-                    {key === "name"
-                      ? "Name"
-                      : key === "size"
-                        ? "Size"
-                        : "Last modified"}
-                    {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
-                  </th>
-                ))}
-                <th className="px-3 py-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedFolders().map((folder) => (
-                <tr
-                  className="border-b bg-white hover:bg-gray-50"
-                  key={`folder-${folder.id}`}
-                >
-                  <td className="relative px-3 py-2">
-                    {renamingId === folder.id && (
-                      <span className="invisible font-medium">
-                        📁 {folder.name}
-                      </span>
-                    )}
-                    {renamingId === folder.id ? (
-                      <span className="absolute inset-0 flex items-center gap-2 px-3">
-                        <input
-                          autoFocus
-                          className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") renameFolder(folder.id);
-                            if (e.key === "Escape") setRenamingId(null);
-                          }}
-                          value={renameValue}
-                        />
-                        <button
-                          className="shrink-0 text-green-600 hover:underline"
-                          onClick={() => renameFolder(folder.id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="shrink-0 text-gray-500 hover:underline"
-                          onClick={() => setRenamingId(null)}
-                        >
-                          Cancel
-                        </button>
-                      </span>
-                    ) : (
-                      <button
-                        className="font-medium hover:underline"
-                        onClick={() => openFolder(folder)}
-                      >
-                        📁 {folder.name}
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-gray-400">—</td>
-                  <td className="px-3 py-2 text-gray-400">
-                    {new Date(folder.updatedAt).toLocaleString(undefined, {
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      month: "numeric",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="flex gap-2 text-gray-500">
-                      <button className="hover:text-blue-500" title="Share">
-                        🔗
-                      </button>
-                      <button
-                        className="hover:text-yellow-500"
-                        onClick={() => {
-                          setRenamingId(folder.id);
-                          setRenameValue(folder.name);
-                        }}
-                        title="Rename"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="hover:text-red-500"
-                        onClick={() => deleteFolder(folder.id)}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                      <button
-                        className={
-                          folder.starred
-                            ? "text-yellow-400"
-                            : "hover:text-yellow-400"
-                        }
-                        onClick={() => toggleFolderStar(folder)}
-                        title={folder.starred ? "Unstar" : "Star"}
-                      >
-                        {folder.starred ? "★" : "☆"}
-                      </button>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {sortedFiles().map((file) => (
-                <tr
-                  className="border-b bg-white hover:bg-gray-50"
-                  key={`file-${file.id}`}
-                >
-                  <td className="px-3 py-2">
-                    <button
-                      className="hover:underline"
-                      onClick={() => setPreviewFile(file)}
+        {/* Search results */}
+        {searchResults && (
+          <div className="space-y-1">
+            {searchResults.folders.length === 0 &&
+            searchResults.files.length === 0 ? (
+              <p className="text-sm text-gray-400">No results found.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <tbody>
+                  {searchResults.folders.map((folder) => (
+                    <tr
+                      className="border-b bg-white hover:bg-gray-50"
+                      key={`sf-${folder.id}`}
                     >
-                      📄 {file.name}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 text-gray-400">
-                    {(file.size / 1024).toFixed(1)} KB
-                  </td>
-                  <td className="px-3 py-2 text-gray-400">
-                    {new Date(file.updatedAt).toLocaleString(undefined, {
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      month: "numeric",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="flex gap-2 text-gray-500">
-                      <button className="hover:text-blue-500" title="Share">
-                        🔗
-                      </button>
-                      <a
-                        className="hover:text-green-500"
-                        download
-                        href={`/api/files/${file.id}/download`}
-                        title="Download"
-                      >
-                        ⬇️
-                      </a>
-                      <button
-                        className="hover:text-red-500"
-                        onClick={() => deleteFile(file)}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                      <button
-                        className={
-                          file.starred
-                            ? "text-yellow-400"
-                            : "hover:text-yellow-400"
-                        }
-                        onClick={() => toggleFileStar(file)}
-                        title={file.starred ? "Unstar" : "Star"}
-                      >
-                        {file.starred ? "★" : "☆"}
-                      </button>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td className="px-3 py-2">
+                        <button
+                          className="font-medium hover:underline"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setSearchResults(null);
+                            openFolder(folder);
+                          }}
+                        >
+                          📁 {folder.name}
+                        </button>
+                      </td>
+                      <td className="px-3 py-2 text-gray-400">Folder</td>
+                    </tr>
+                  ))}
+                  {searchResults.files.map((file) => (
+                    <tr
+                      className="border-b bg-white hover:bg-gray-50"
+                      key={`sfi-${file.id}`}
+                    >
+                      <td className="px-3 py-2">
+                        <button
+                          className="hover:underline"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setSearchResults(null);
+                            setPreviewFile(file);
+                          }}
+                        >
+                          📄 {file.name}
+                        </button>
+                      </td>
+                      <td className="px-3 py-2 text-gray-400">
+                        {(file.size / 1024).toFixed(1)} KB
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         )}
 
+        {/* List view: sortable table */}
+        {!searchResults &&
+          view === "row" &&
+          (folders.length > 0 || files.length > 0) && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-gray-500">
+                  {(["name", "size", "updatedAt"] as const).map((key) => (
+                    <th
+                      className="cursor-pointer px-3 py-2 select-none hover:text-gray-800"
+                      key={key}
+                      onClick={() => toggleSort(key)}
+                    >
+                      {key === "name"
+                        ? "Name"
+                        : key === "size"
+                          ? "Size"
+                          : "Last modified"}
+                      {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedFolders().map((folder) => (
+                  <tr
+                    className="border-b bg-white hover:bg-gray-50"
+                    key={`folder-${folder.id}`}
+                  >
+                    <td className="relative px-3 py-2">
+                      {renamingId === folder.id && (
+                        <span className="invisible font-medium">
+                          📁 {folder.name}
+                        </span>
+                      )}
+                      {renamingId === folder.id ? (
+                        <span className="absolute inset-0 flex items-center gap-2 px-3">
+                          <input
+                            autoFocus
+                            className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") renameFolder(folder.id);
+                              if (e.key === "Escape") setRenamingId(null);
+                            }}
+                            value={renameValue}
+                          />
+                          <button
+                            className="shrink-0 text-green-600 hover:underline"
+                            onClick={() => renameFolder(folder.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="shrink-0 text-gray-500 hover:underline"
+                            onClick={() => setRenamingId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          className="font-medium hover:underline"
+                          onClick={() => openFolder(folder)}
+                        >
+                          📁 {folder.name}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400">—</td>
+                    <td className="px-3 py-2 text-gray-400">
+                      {new Date(folder.updatedAt).toLocaleString(undefined, {
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        month: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="flex gap-2 text-gray-500">
+                        <button className="hover:text-blue-500" title="Share">
+                          🔗
+                        </button>
+                        <button
+                          className="hover:text-yellow-500"
+                          onClick={() => {
+                            setRenamingId(folder.id);
+                            setRenameValue(folder.name);
+                          }}
+                          title="Rename"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="hover:text-red-500"
+                          onClick={() => deleteFolder(folder.id)}
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                        <button
+                          className={
+                            folder.starred
+                              ? "text-yellow-400"
+                              : "hover:text-yellow-400"
+                          }
+                          onClick={() => toggleFolderStar(folder)}
+                          title={folder.starred ? "Unstar" : "Star"}
+                        >
+                          {folder.starred ? "★" : "☆"}
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {sortedFiles().map((file) => (
+                  <tr
+                    className="border-b bg-white hover:bg-gray-50"
+                    key={`file-${file.id}`}
+                  >
+                    <td className="px-3 py-2">
+                      <button
+                        className="hover:underline"
+                        onClick={() => setPreviewFile(file)}
+                      >
+                        📄 {file.name}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 text-gray-400">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </td>
+                    <td className="px-3 py-2 text-gray-400">
+                      {new Date(file.updatedAt).toLocaleString(undefined, {
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        month: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="flex gap-2 text-gray-500">
+                        <button className="hover:text-blue-500" title="Share">
+                          🔗
+                        </button>
+                        <a
+                          className="hover:text-green-500"
+                          download
+                          href={`/api/files/${file.id}/download`}
+                          title="Download"
+                        >
+                          ⬇️
+                        </a>
+                        <button
+                          className="hover:text-red-500"
+                          onClick={() => deleteFile(file)}
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                        <button
+                          className={
+                            file.starred
+                              ? "text-yellow-400"
+                              : "hover:text-yellow-400"
+                          }
+                          onClick={() => toggleFileStar(file)}
+                          title={file.starred ? "Unstar" : "Star"}
+                        >
+                          {file.starred ? "★" : "☆"}
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
         {/* Grid view */}
-        {view === "box" && (
+        {!searchResults && view === "box" && (
           <>
             {(folders.length > 0 || files.length > 0) && (
               <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

@@ -6,6 +6,7 @@ import {
 	downloadFile,
 	getFiles,
 	previewFile,
+	searchItems,
 	toggleFileStar,
 	uploadFile,
 } from '../controllers/fileController.js';
@@ -62,6 +63,8 @@ router.patch(
 	updateFolder,
 );
 router.delete('/folders/:id', requireAuth, deleteFolder);
+
+router.get('/search', requireAuth, searchItems);
 
 router.get('/files', requireAuth, getFiles);
 router.post(
