@@ -486,7 +486,7 @@ export default function FolderView() {
                       <>
                         <span className="text-3xl">📁</span>
                         <button
-                          className="text-sm font-medium hover:underline"
+                          className="w-full text-sm font-medium break-words hover:underline"
                           onClick={() => openFolder(folder)}
                         >
                           {folder.name}
@@ -540,7 +540,7 @@ export default function FolderView() {
                       📄
                     </button>
                     <button
-                      className="hover:underline"
+                      className="w-full break-words hover:underline"
                       onClick={() => setPreviewFile(file)}
                     >
                       {file.name}
