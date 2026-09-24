@@ -143,6 +143,31 @@ export const toggleFileStar = async (
 	}
 };
 
+export const renameFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const { name } = req.body as { name: string };
+
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!file) return res.status(404).json({ error: 'File not found' });
+
+		const updated = await prisma.file.update({
+			data: { name },
+			where: { id },
+		});
+		res.json(updated);
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const deleteFile = async (
 	req: Request,
 	res: Response,

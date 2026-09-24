@@ -7,6 +7,7 @@ import {
 	getFiles,
 	moveFile,
 	previewFile,
+	renameFile,
 	searchItems,
 	toggleFileStar,
 	uploadFile,
@@ -16,8 +17,8 @@ import {
 	deleteFolder,
 	getFolders,
 	moveFolder,
+	renameFolder,
 	toggleFolderStar,
-	updateFolder,
 } from '../controllers/folderController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { upload } from '../middlewares/upload.js';
@@ -63,7 +64,7 @@ router.patch(
 	requireAuth,
 	folderNameValidator,
 	validate,
-	updateFolder,
+	renameFolder,
 );
 router.delete('/folders/:id', requireAuth, deleteFolder);
 
@@ -82,6 +83,13 @@ router.get('/files/:id/preview', requireAuth, previewFile);
 router.get('/files/:id/download', requireAuth, downloadFile);
 router.patch('/files/:id/star', requireAuth, toggleFileStar);
 router.patch('/files/:id/move', requireAuth, moveFile);
+router.patch(
+	'/files/:id',
+	requireAuth,
+	folderNameValidator,
+	validate,
+	renameFile,
+);
 router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;

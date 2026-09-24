@@ -13,7 +13,10 @@ export default function FolderView() {
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderError, setNewFolderError] = useState("");
-  const [renamingId, setRenamingId] = useState<null | number>(null);
+  const [renamingItem, setRenamingItem] = useState<null | {
+    id: number;
+    type: "file" | "folder";
+  }>(null);
   const [renameValue, setRenameValue] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
   const [showStarred, setShowStarred] = useState(false);
@@ -27,9 +30,7 @@ export default function FolderView() {
     folders: Folder[];
   }>(null);
   const [dragOver, setDragOver] = useState<"root" | null | number>(null);
-
   const dragItem = useRef<DragItem | null>(null);
-
   const searchTimer = useRef<null | ReturnType<typeof setTimeout>>(null);
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -150,7 +151,20 @@ export default function FolderView() {
       method: "PATCH",
     });
     if (res.ok) {
-      setRenamingId(null);
+      setRenamingItem(null);
+      load();
+    }
+  }
+
+  async function renameFile(id: number) {
+    if (!renameValue.trim()) return;
+    const res = await fetch(`/api/files/${id}`, {
+      body: JSON.stringify({ name: renameValue.trim() }),
+      headers: { "Content-Type": "application/json" },
+      method: "PATCH",
+    });
+    if (res.ok) {
+      setRenamingItem(null);
       load();
     }
   }
@@ -453,12 +467,14 @@ export default function FolderView() {
                     }}
                   >
                     <td className="relative px-3 py-2">
-                      {renamingId === folder.id && (
-                        <span className="invisible font-medium">
-                          📁 {folder.name}
-                        </span>
-                      )}
-                      {renamingId === folder.id ? (
+                      {renamingItem?.type === "folder" &&
+                        renamingItem.id === folder.id && (
+                          <span className="invisible font-medium">
+                            📁 {folder.name}
+                          </span>
+                        )}
+                      {renamingItem?.type === "folder" &&
+                      renamingItem.id === folder.id ? (
                         <span className="absolute inset-0 flex items-center gap-2 px-3">
                           <input
                             autoFocus
@@ -466,7 +482,7 @@ export default function FolderView() {
                             onChange={(e) => setRenameValue(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") renameFolder(folder.id);
-                              if (e.key === "Escape") setRenamingId(null);
+                              if (e.key === "Escape") setRenamingItem(null);
                             }}
                             value={renameValue}
                           />
@@ -478,7 +494,7 @@ export default function FolderView() {
                           </button>
                           <button
                             className="shrink-0 text-gray-500 hover:underline"
-                            onClick={() => setRenamingId(null)}
+                            onClick={() => setRenamingItem(null)}
                           >
                             Cancel
                           </button>
@@ -504,13 +520,10 @@ export default function FolderView() {
                     </td>
                     <td className="px-3 py-2">
                       <span className="flex gap-2 text-gray-500">
-                        <button className="hover:text-blue-500" title="Share">
-                          🔗
-                        </button>
                         <button
                           className="hover:text-yellow-500"
                           onClick={() => {
-                            setRenamingId(folder.id);
+                            setRenamingItem({ id: folder.id, type: "folder" });
                             setRenameValue(folder.name);
                           }}
                           title="Rename"
@@ -523,6 +536,9 @@ export default function FolderView() {
                           title="Delete"
                         >
                           🗑️
+                        </button>
+                        <button className="hover:text-blue-500" title="Share">
+                          🔗
                         </button>
                         <button
                           className={
@@ -552,13 +568,45 @@ export default function FolderView() {
                       dragItem.current = { id: file.id, type: "file" };
                     }}
                   >
-                    <td className="px-3 py-2">
-                      <button
-                        className="hover:underline"
-                        onClick={() => setPreviewFile(file)}
-                      >
-                        📄 {file.name}
-                      </button>
+                    <td className="relative px-3 py-2">
+                      {renamingItem?.type === "file" &&
+                        renamingItem.id === file.id && (
+                          <span className="invisible">📄 {file.name}</span>
+                        )}
+                      {renamingItem?.type === "file" &&
+                      renamingItem.id === file.id ? (
+                        <span className="absolute inset-0 flex items-center gap-2 px-3">
+                          <input
+                            autoFocus
+                            className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") renameFile(file.id);
+                              if (e.key === "Escape") setRenamingItem(null);
+                            }}
+                            value={renameValue}
+                          />
+                          <button
+                            className="shrink-0 text-green-600 hover:underline"
+                            onClick={() => renameFile(file.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="shrink-0 text-gray-500 hover:underline"
+                            onClick={() => setRenamingItem(null)}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          className="hover:underline"
+                          onClick={() => setPreviewFile(file)}
+                        >
+                          📄 {file.name}
+                        </button>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-gray-400">
                       {(file.size / 1024).toFixed(1)} KB
@@ -574,6 +622,23 @@ export default function FolderView() {
                     </td>
                     <td className="px-3 py-2">
                       <span className="flex gap-2 text-gray-500">
+                        <button
+                          className="hover:text-yellow-500"
+                          onClick={() => {
+                            setRenamingItem({ id: file.id, type: "file" });
+                            setRenameValue(file.name);
+                          }}
+                          title="Rename"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="hover:text-red-500"
+                          onClick={() => deleteFile(file)}
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
                         <button className="hover:text-blue-500" title="Share">
                           🔗
                         </button>
@@ -585,13 +650,6 @@ export default function FolderView() {
                         >
                           ⬇️
                         </a>
-                        <button
-                          className="hover:text-red-500"
-                          onClick={() => deleteFile(file)}
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
                         <button
                           className={
                             file.starred
@@ -642,7 +700,8 @@ export default function FolderView() {
                       handleDrop(folder.id);
                     }}
                   >
-                    {renamingId === folder.id ? (
+                    {renamingItem?.type === "folder" &&
+                    renamingItem.id === folder.id ? (
                       <>
                         <input
                           autoFocus
@@ -650,7 +709,7 @@ export default function FolderView() {
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") renameFolder(folder.id);
-                            if (e.key === "Escape") setRenamingId(null);
+                            if (e.key === "Escape") setRenamingItem(null);
                           }}
                           value={renameValue}
                         />
@@ -662,7 +721,7 @@ export default function FolderView() {
                         </button>
                         <button
                           className="text-sm text-gray-500 hover:underline"
-                          onClick={() => setRenamingId(null)}
+                          onClick={() => setRenamingItem(null)}
                         >
                           Cancel
                         </button>
@@ -677,13 +736,13 @@ export default function FolderView() {
                           {folder.name}
                         </button>
                         <div className="flex gap-2 text-gray-500">
-                          <button className="hover:text-blue-500" title="Share">
-                            🔗
-                          </button>
                           <button
                             className="hover:text-yellow-500"
                             onClick={() => {
-                              setRenamingId(folder.id);
+                              setRenamingItem({
+                                id: folder.id,
+                                type: "folder",
+                              });
                               setRenameValue(folder.name);
                             }}
                             title="Rename"
@@ -696,6 +755,9 @@ export default function FolderView() {
                             title="Delete"
                           >
                             🗑️
+                          </button>
+                          <button className="hover:text-blue-500" title="Share">
+                            🔗
                           </button>
                           <button
                             className={
@@ -726,49 +788,91 @@ export default function FolderView() {
                       dragItem.current = { id: file.id, type: "file" };
                     }}
                   >
-                    <button
-                      className="text-3xl"
-                      onClick={() => setPreviewFile(file)}
-                    >
-                      📄
-                    </button>
-                    <button
-                      className="w-full break-words hover:underline"
-                      onClick={() => setPreviewFile(file)}
-                    >
-                      {file.name}
-                    </button>
-                    <div className="flex gap-2 text-gray-500">
-                      <button className="hover:text-blue-500" title="Share">
-                        🔗
-                      </button>
-                      <a
-                        className="hover:text-green-500"
-                        download
-                        href={`/api/files/${file.id}/download`}
-                        title="Download"
-                      >
-                        ⬇️
-                      </a>
-                      <button
-                        className="hover:text-red-500"
-                        onClick={() => deleteFile(file)}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                      <button
-                        className={
-                          file.starred
-                            ? "text-yellow-400"
-                            : "hover:text-yellow-400"
-                        }
-                        onClick={() => toggleFileStar(file)}
-                        title={file.starred ? "Unstar" : "Star"}
-                      >
-                        {file.starred ? "★" : "☆"}
-                      </button>
-                    </div>
+                    {renamingItem?.type === "file" &&
+                    renamingItem.id === file.id ? (
+                      <>
+                        <input
+                          autoFocus
+                          className="w-full rounded border px-2 py-0.5 text-sm"
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") renameFile(file.id);
+                            if (e.key === "Escape") setRenamingItem(null);
+                          }}
+                          value={renameValue}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            className="text-sm text-green-600 hover:underline"
+                            onClick={() => renameFile(file.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="text-sm text-gray-500 hover:underline"
+                            onClick={() => setRenamingItem(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="text-3xl"
+                          onClick={() => setPreviewFile(file)}
+                        >
+                          📄
+                        </button>
+                        <button
+                          className="w-full break-words hover:underline"
+                          onClick={() => setPreviewFile(file)}
+                        >
+                          {file.name}
+                        </button>
+                        <div className="flex gap-2 text-gray-500">
+                          <button
+                            className="hover:text-yellow-500"
+                            onClick={() => {
+                              setRenamingItem({ id: file.id, type: "file" });
+                              setRenameValue(file.name);
+                            }}
+                            title="Rename"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="hover:text-red-500"
+                            onClick={() => deleteFile(file)}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                          <button className="hover:text-blue-500" title="Share">
+                            🔗
+                          </button>
+                          <a
+                            className="hover:text-green-500"
+                            download
+                            href={`/api/files/${file.id}/download`}
+                            title="Download"
+                          >
+                            ⬇️
+                          </a>
+                          <button
+                            className={
+                              file.starred
+                                ? "text-yellow-400"
+                                : "hover:text-yellow-400"
+                            }
+                            onClick={() => toggleFileStar(file)}
+                            title={file.starred ? "Unstar" : "Star"}
+                          >
+                            {file.starred ? "★" : "☆"}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>

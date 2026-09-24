@@ -53,7 +53,7 @@ export const createFolder = async (
 	}
 };
 
-export const updateFolder = async (
+export const renameFolder = async (
 	req: Request,
 	res: Response,
 	next: NextFunction,
