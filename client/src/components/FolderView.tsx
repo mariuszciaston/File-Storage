@@ -57,38 +57,42 @@ export default function FolderView() {
   }
 
   function sortedFolders() {
+    const direction = sortAsc ? 1 : -1;
+
     return [...folders]
       .filter((f) => !showStarred || f.starred)
       .sort((a, b) => {
-        const av =
-          sortKey === "updatedAt"
-            ? new Date(a.updatedAt).getTime()
-            : a.name.toLowerCase();
-        const bv =
-          sortKey === "updatedAt"
-            ? new Date(b.updatedAt).getTime()
-            : b.name.toLowerCase();
-        return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+        if (sortKey === "updatedAt") {
+          return (
+            (new Date(a.updatedAt).getTime() -
+              new Date(b.updatedAt).getTime()) *
+            direction
+          );
+        }
+
+        return a.name.localeCompare(b.name) * direction;
       });
   }
 
   function sortedFiles() {
+    const direction = sortAsc ? 1 : -1;
+
     return [...files]
       .filter((f) => !showStarred || f.starred)
       .sort((a, b) => {
-        const av =
-          sortKey === "size"
-            ? a.size
-            : sortKey === "updatedAt"
-              ? new Date(a.updatedAt).getTime()
-              : a.name.toLowerCase();
-        const bv =
-          sortKey === "size"
-            ? b.size
-            : sortKey === "updatedAt"
-              ? new Date(b.updatedAt).getTime()
-              : b.name.toLowerCase();
-        return (av < bv ? -1 : av > bv ? 1 : 0) * (sortAsc ? 1 : -1);
+        if (sortKey === "size") {
+          return (a.size - b.size) * direction;
+        }
+
+        if (sortKey === "updatedAt") {
+          return (
+            (new Date(a.updatedAt).getTime() -
+              new Date(b.updatedAt).getTime()) *
+            direction
+          );
+        }
+
+        return a.name.localeCompare(b.name) * direction;
       });
   }
 
