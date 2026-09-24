@@ -3,16 +3,16 @@ import { body } from 'express-validator';
 
 const FORBIDDEN_CHARS = /[<>:"/\\|?*]/;
 
-export const folderNameValidator = [
+export const nameValidator = [
 	body('name')
 		.trim()
 		.notEmpty()
-		.withMessage('Folder name cannot be empty')
+		.withMessage('Name cannot be empty')
 		.isLength({ max: 50 })
-		.withMessage('Folder name cannot exceed 50 characters')
+		.withMessage('Name cannot exceed 50 characters')
 		.not()
 		.matches(FORBIDDEN_CHARS)
-		.withMessage('Folder name contains forbidden characters'),
+		.withMessage('Name contains forbidden characters'),
 ];
 
 const ALLOWED_MIME_TYPES = new Set([

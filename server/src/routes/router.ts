@@ -26,7 +26,7 @@ import { upload } from '../middlewares/upload.js';
 import { validate } from '../middlewares/validate.js';
 import {
 	fileUploadValidator,
-	folderNameValidator,
+	nameValidator,
 } from '../middlewares/validators.js';
 
 const router = Router();
@@ -51,19 +51,13 @@ router.get('/dashboard', requireAuth, (req, res) => {
 });
 
 router.get('/folders', requireAuth, getFolders);
-router.post(
-	'/folders',
-	requireAuth,
-	folderNameValidator,
-	validate,
-	createFolder,
-);
+router.post('/folders', requireAuth, nameValidator, validate, createFolder);
 router.patch('/folders/:id/star', requireAuth, toggleFolderStar);
 router.patch('/folders/:id/move', requireAuth, moveFolder);
 router.patch(
 	'/folders/:id',
 	requireAuth,
-	folderNameValidator,
+	nameValidator,
 	validate,
 	renameFolder,
 );
@@ -85,13 +79,7 @@ router.get('/files/:id/preview', requireAuth, previewFile);
 router.get('/files/:id/download', requireAuth, downloadFile);
 router.patch('/files/:id/star', requireAuth, toggleFileStar);
 router.patch('/files/:id/move', requireAuth, moveFile);
-router.patch(
-	'/files/:id',
-	requireAuth,
-	folderNameValidator,
-	validate,
-	renameFile,
-);
+router.patch('/files/:id', requireAuth, nameValidator, validate, renameFile);
 router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;

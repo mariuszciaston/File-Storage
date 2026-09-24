@@ -18,6 +18,7 @@ export default function FolderView() {
     type: "file" | "folder";
   }>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState("");
   const [view, setView] = useState<"box" | "row">("row");
   const [showStarred, setShowStarred] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
@@ -144,28 +145,42 @@ export default function FolderView() {
   }
 
   async function renameFolder(id: number) {
-    if (!renameValue.trim()) return;
+    if (!renameValue.trim()) {
+      setRenameError("Folder name cannot be empty");
+      return;
+    }
     const res = await fetch(`/api/folders/${id}`, {
       body: JSON.stringify({ name: renameValue.trim() }),
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
     });
     if (res.ok) {
+      setRenameError("");
       setRenamingItem(null);
       load();
+    } else {
+      const data = await res.json();
+      setRenameError(data.errors?.[0]?.msg ?? "Failed to rename folder");
     }
   }
 
   async function renameFile(id: number) {
-    if (!renameValue.trim()) return;
+    if (!renameValue.trim()) {
+      setRenameError("File name cannot be empty");
+      return;
+    }
     const res = await fetch(`/api/files/${id}`, {
       body: JSON.stringify({ name: renameValue.trim() }),
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
     });
     if (res.ok) {
+      setRenameError("");
       setRenamingItem(null);
       load();
+    } else {
+      const data = await res.json();
+      setRenameError(data.errors?.[0]?.msg ?? "Failed to rename file");
     }
   }
 
@@ -478,11 +493,17 @@ export default function FolderView() {
                         <span className="absolute inset-0 flex items-center gap-2 px-3">
                           <input
                             autoFocus
-                            className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
-                            onChange={(e) => setRenameValue(e.target.value)}
+                            className={`min-w-0 flex-1 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                            onChange={(e) => {
+                              setRenameValue(e.target.value);
+                              setRenameError("");
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") renameFolder(folder.id);
-                              if (e.key === "Escape") setRenamingItem(null);
+                              if (e.key === "Escape") {
+                                setRenamingItem(null);
+                                setRenameError("");
+                              }
                             }}
                             value={renameValue}
                           />
@@ -494,10 +515,18 @@ export default function FolderView() {
                           </button>
                           <button
                             className="shrink-0 text-gray-500 hover:underline"
-                            onClick={() => setRenamingItem(null)}
+                            onClick={() => {
+                              setRenamingItem(null);
+                              setRenameError("");
+                            }}
                           >
                             Cancel
                           </button>
+                          {renameError && (
+                            <span className="absolute top-full left-3 z-10 text-xs text-red-500">
+                              {renameError}
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <button
@@ -525,6 +554,7 @@ export default function FolderView() {
                           onClick={() => {
                             setRenamingItem({ id: folder.id, type: "folder" });
                             setRenameValue(folder.name);
+                            setRenameError("");
                           }}
                           title="Rename"
                         >
@@ -586,11 +616,17 @@ export default function FolderView() {
                         <span className="absolute inset-0 flex items-center gap-2 px-3">
                           <input
                             autoFocus
-                            className="min-w-0 flex-1 rounded border px-2 py-0.5 text-sm"
-                            onChange={(e) => setRenameValue(e.target.value)}
+                            className={`min-w-0 flex-1 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                            onChange={(e) => {
+                              setRenameValue(e.target.value);
+                              setRenameError("");
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") renameFile(file.id);
-                              if (e.key === "Escape") setRenamingItem(null);
+                              if (e.key === "Escape") {
+                                setRenamingItem(null);
+                                setRenameError("");
+                              }
                             }}
                             value={renameValue}
                           />
@@ -602,10 +638,18 @@ export default function FolderView() {
                           </button>
                           <button
                             className="shrink-0 text-gray-500 hover:underline"
-                            onClick={() => setRenamingItem(null)}
+                            onClick={() => {
+                              setRenamingItem(null);
+                              setRenameError("");
+                            }}
                           >
                             Cancel
                           </button>
+                          {renameError && (
+                            <span className="absolute top-full left-3 z-10 text-xs text-red-500">
+                              {renameError}
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <button
@@ -635,6 +679,7 @@ export default function FolderView() {
                           onClick={() => {
                             setRenamingItem({ id: file.id, type: "file" });
                             setRenameValue(file.name);
+                            setRenameError("");
                           }}
                           title="Rename"
                         >
@@ -713,11 +758,17 @@ export default function FolderView() {
                       <>
                         <input
                           autoFocus
-                          className="rounded border px-2 py-0.5 text-sm"
-                          onChange={(e) => setRenameValue(e.target.value)}
+                          className={`rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                          onChange={(e) => {
+                            setRenameValue(e.target.value);
+                            setRenameError("");
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") renameFolder(folder.id);
-                            if (e.key === "Escape") setRenamingItem(null);
+                            if (e.key === "Escape") {
+                              setRenamingItem(null);
+                              setRenameError("");
+                            }
                           }}
                           value={renameValue}
                         />
@@ -729,10 +780,16 @@ export default function FolderView() {
                         </button>
                         <button
                           className="text-sm text-gray-500 hover:underline"
-                          onClick={() => setRenamingItem(null)}
+                          onClick={() => {
+                            setRenamingItem(null);
+                            setRenameError("");
+                          }}
                         >
                           Cancel
                         </button>
+                        {renameError && (
+                          <p className="text-xs text-red-500">{renameError}</p>
+                        )}
                       </>
                     ) : (
                       <>
@@ -752,6 +809,7 @@ export default function FolderView() {
                                 type: "folder",
                               });
                               setRenameValue(folder.name);
+                              setRenameError("");
                             }}
                             title="Rename"
                           >
@@ -809,11 +867,17 @@ export default function FolderView() {
                       <>
                         <input
                           autoFocus
-                          className="w-full rounded border px-2 py-0.5 text-sm"
-                          onChange={(e) => setRenameValue(e.target.value)}
+                          className={`w-full rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                          onChange={(e) => {
+                            setRenameValue(e.target.value);
+                            setRenameError("");
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") renameFile(file.id);
-                            if (e.key === "Escape") setRenamingItem(null);
+                            if (e.key === "Escape") {
+                              setRenamingItem(null);
+                              setRenameError("");
+                            }
                           }}
                           value={renameValue}
                         />
@@ -826,10 +890,18 @@ export default function FolderView() {
                           </button>
                           <button
                             className="text-sm text-gray-500 hover:underline"
-                            onClick={() => setRenamingItem(null)}
+                            onClick={() => {
+                              setRenamingItem(null);
+                              setRenameError("");
+                            }}
                           >
                             Cancel
                           </button>
+                          {renameError && (
+                            <p className="text-xs text-red-500">
+                              {renameError}
+                            </p>
+                          )}
                         </div>
                       </>
                     ) : (
@@ -852,6 +924,7 @@ export default function FolderView() {
                             onClick={() => {
                               setRenamingItem({ id: file.id, type: "file" });
                               setRenameValue(file.name);
+                              setRenameError("");
                             }}
                             title="Rename"
                           >
