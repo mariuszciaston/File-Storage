@@ -1,4 +1,6 @@
+import { ZipArchive } from 'archiver';
 import { NextFunction, Request, Response } from 'express';
+import path from 'path';
 
 import { FolderModel, UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
@@ -151,6 +153,50 @@ export const deleteFolder = async (
 
 		await prisma.folder.delete({ where: { id } });
 		res.json({ message: 'Folder deleted' });
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const downloadFolder = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const folder = await prisma.folder.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!folder) return res.status(404).json({ error: 'Folder not found' });
+
+		const [folders, files] = await Promise.all([
+			prisma.folder.findMany({ where: { ownerId: userId } }),
+			prisma.file.findMany({ where: { ownerId: userId } }),
+		]);
+		const archive = new ZipArchive();
+
+		archive.on('error', next);
+		res.attachment(`${folder.name}.zip`);
+		archive.pipe(res);
+
+		function appendFolder(folderId: number, archivePath: string) {
+			for (const file of files.filter((item) => item.folderId === folderId)) {
+				archive.file(path.resolve(file.url), {
+					name: path.join(archivePath, file.name),
+				});
+			}
+
+			for (const child of folders.filter(
+				(item) => item.parentId === folderId,
+			)) {
+				appendFolder(child.id, path.join(archivePath, child.name));
+			}
+		}
+
+		appendFolder(folder.id, folder.name);
+		await archive.finalize();
 	} catch (error) {
 		next(error);
 	}

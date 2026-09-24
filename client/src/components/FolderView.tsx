@@ -540,6 +540,14 @@ export default function FolderView() {
                         <button className="hover:text-blue-500" title="Share">
                           🔗
                         </button>
+                        <a
+                          className="hover:text-green-500"
+                          download
+                          href={`/api/folders/${folder.id}/download`}
+                          title="Download"
+                        >
+                          ⬇️
+                        </a>
                         <button
                           className={
                             folder.starred
@@ -759,6 +767,14 @@ export default function FolderView() {
                           <button className="hover:text-blue-500" title="Share">
                             🔗
                           </button>
+                          <a
+                            className="hover:text-green-500"
+                            download
+                            href={`/api/folders/${folder.id}/download`}
+                            title="Download"
+                          >
+                            ⬇️
+                          </a>
                           <button
                             className={
                               folder.starred

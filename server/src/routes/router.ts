@@ -15,6 +15,7 @@ import {
 import {
 	createFolder,
 	deleteFolder,
+	downloadFolder,
 	getFolders,
 	moveFolder,
 	renameFolder,
@@ -66,6 +67,7 @@ router.patch(
 	validate,
 	renameFolder,
 );
+router.get('/folders/:id/download', requireAuth, downloadFolder);
 router.delete('/folders/:id', requireAuth, deleteFolder);
 
 router.get('/search', requireAuth, searchItems);
