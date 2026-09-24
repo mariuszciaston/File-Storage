@@ -26,7 +26,7 @@ export default function FolderView() {
     files: FileItem[];
     folders: Folder[];
   }>(null);
-  const [dragOver, setDragOver] = useState<null | number>(null);
+  const [dragOver, setDragOver] = useState<"root" | null | number>(null);
 
   const dragItem = useRef<DragItem | null>(null);
 
@@ -194,7 +194,7 @@ export default function FolderView() {
     setCurrentFolder(folder);
   }
 
-  async function handleDrop(targetFolderId: number) {
+  async function handleDrop(targetFolderId: null | number) {
     const item = dragItem.current;
     if (!item || item.id === targetFolderId) return;
     const url =
@@ -279,8 +279,19 @@ export default function FolderView() {
         <div className="flex items-center justify-between">
           <nav className="flex flex-wrap items-center gap-1">
             <button
-              className="cursor-pointer text-blue-600 hover:underline"
+              className={`cursor-pointer text-blue-600 hover:underline ${
+                dragOver === "root" ? "rounded bg-blue-100 px-1" : ""
+              }`}
               onClick={() => navigateTo(-1)}
+              onDragLeave={() => setDragOver(null)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver("root");
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(null);
+              }}
             >
               Storage
             </button>
@@ -288,8 +299,19 @@ export default function FolderView() {
               <span className="flex items-center gap-1" key={b.id}>
                 <span>{">"}</span>
                 <button
-                  className="cursor-pointer text-blue-600 hover:underline"
+                  className={`cursor-pointer text-blue-600 hover:underline ${
+                    dragOver === b.id ? "rounded bg-blue-100 px-1" : ""
+                  }`}
                   onClick={() => navigateTo(i)}
+                  onDragLeave={() => setDragOver(null)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(b.id);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop(b.id);
+                  }}
                 >
                   {b.name}
                 </button>
