@@ -165,3 +165,36 @@ export const deleteFile = async (
 		next(error);
 	}
 };
+
+export const moveFile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const { folderId } = req.body as { folderId: null | number };
+
+		const file = await prisma.file.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!file) return res.status(404).json({ error: 'File not found' });
+
+		if (folderId) {
+			const folder = await prisma.folder.findFirst({
+				where: { id: folderId, ownerId: userId },
+			});
+			if (!folder)
+				return res.status(404).json({ error: 'Target folder not found' });
+		}
+
+		const updated = await prisma.file.update({
+			data: { folderId: folderId ?? null },
+			where: { id },
+		});
+		res.json(updated);
+	} catch (error) {
+		next(error);
+	}
+};

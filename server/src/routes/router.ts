@@ -5,6 +5,7 @@ import {
 	deleteFile,
 	downloadFile,
 	getFiles,
+	moveFile,
 	previewFile,
 	searchItems,
 	toggleFileStar,
@@ -14,6 +15,7 @@ import {
 	createFolder,
 	deleteFolder,
 	getFolders,
+	moveFolder,
 	toggleFolderStar,
 	updateFolder,
 } from '../controllers/folderController.js';
@@ -55,6 +57,7 @@ router.post(
 	createFolder,
 );
 router.patch('/folders/:id/star', requireAuth, toggleFolderStar);
+router.patch('/folders/:id/move', requireAuth, moveFolder);
 router.patch(
 	'/folders/:id',
 	requireAuth,
@@ -78,6 +81,7 @@ router.post(
 router.get('/files/:id/preview', requireAuth, previewFile);
 router.get('/files/:id/download', requireAuth, downloadFile);
 router.patch('/files/:id/star', requireAuth, toggleFileStar);
+router.patch('/files/:id/move', requireAuth, moveFile);
 router.delete('/files/:id', requireAuth, deleteFile);
 
 export default router;

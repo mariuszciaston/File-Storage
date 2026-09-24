@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { FileItem, Folder } from "../types/types";
+import type { DragItem, FileItem, Folder } from "../types/types";
 
 import FilePreview from "./FilePreview";
 import FileUploader from "./FileUploader";
@@ -26,6 +26,9 @@ export default function FolderView() {
     files: FileItem[];
     folders: Folder[];
   }>(null);
+  const [dragOver, setDragOver] = useState<null | number>(null);
+
+  const dragItem = useRef<DragItem | null>(null);
 
   const searchTimer = useRef<null | ReturnType<typeof setTimeout>>(null);
 
@@ -189,6 +192,27 @@ export default function FolderView() {
   function openFolder(folder: Folder) {
     setBreadcrumbs((prev) => [...prev, folder]);
     setCurrentFolder(folder);
+  }
+
+  async function handleDrop(targetFolderId: number) {
+    const item = dragItem.current;
+    if (!item || item.id === targetFolderId) return;
+    const url =
+      item.type === "folder"
+        ? `/api/folders/${item.id}/move`
+        : `/api/files/${item.id}/move`;
+    const body =
+      item.type === "folder"
+        ? { parentId: targetFolderId }
+        : { folderId: targetFolderId };
+    const res = await fetch(url, {
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      method: "PATCH",
+    });
+    if (res.ok) load();
+    dragItem.current = null;
+    setDragOver(null);
   }
 
   function navigateTo(index: number) {
@@ -382,8 +406,29 @@ export default function FolderView() {
               <tbody>
                 {sortedFolders().map((folder) => (
                   <tr
-                    className="border-b bg-white hover:bg-gray-50"
+                    className={`border-b bg-white hover:bg-gray-50 ${
+                      dragOver === folder.id
+                        ? "outline outline-2 outline-blue-400"
+                        : ""
+                    }`}
+                    draggable
                     key={`folder-${folder.id}`}
+                    onDragEnd={() => {
+                      dragItem.current = null;
+                      setDragOver(null);
+                    }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(folder.id);
+                    }}
+                    onDragStart={() => {
+                      dragItem.current = { id: folder.id, type: "folder" };
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDrop(folder.id);
+                    }}
                   >
                     <td className="relative px-3 py-2">
                       {renamingId === folder.id && (
@@ -475,7 +520,15 @@ export default function FolderView() {
                 {sortedFiles().map((file) => (
                   <tr
                     className="border-b bg-white hover:bg-gray-50"
+                    draggable
                     key={`file-${file.id}`}
+                    onDragEnd={() => {
+                      dragItem.current = null;
+                      setDragOver(null);
+                    }}
+                    onDragStart={() => {
+                      dragItem.current = { id: file.id, type: "file" };
+                    }}
                   >
                     <td className="px-3 py-2">
                       <button
@@ -543,8 +596,29 @@ export default function FolderView() {
               <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {sortedFolders().map((folder) => (
                   <li
-                    className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center"
+                    className={`flex flex-col items-center gap-1 rounded bg-white p-3 text-center ${
+                      dragOver === folder.id
+                        ? "outline outline-2 outline-blue-400"
+                        : ""
+                    }`}
+                    draggable
                     key={folder.id}
+                    onDragEnd={() => {
+                      dragItem.current = null;
+                      setDragOver(null);
+                    }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(folder.id);
+                    }}
+                    onDragStart={() => {
+                      dragItem.current = { id: folder.id, type: "folder" };
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDrop(folder.id);
+                    }}
                   >
                     {renamingId === folder.id ? (
                       <>
@@ -620,7 +694,15 @@ export default function FolderView() {
                 {sortedFiles().map((file) => (
                   <li
                     className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
+                    draggable
                     key={file.id}
+                    onDragEnd={() => {
+                      dragItem.current = null;
+                      setDragOver(null);
+                    }}
+                    onDragStart={() => {
+                      dragItem.current = { id: file.id, type: "file" };
+                    }}
                   >
                     <button
                       className="text-3xl"

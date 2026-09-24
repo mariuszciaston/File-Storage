@@ -16,7 +16,7 @@ export const getFolders = async (
 			include: { children: true, files: true },
 			where: { ownerId: userId, parentId },
 		});
-		
+
 		res.json(folders);
 	} catch (error) {
 		next(error);
@@ -29,7 +29,10 @@ export const createFolder = async (
 	next: NextFunction,
 ) => {
 	try {
-		const { name, parentId } = req.body as Pick<FolderModel, 'name' | 'parentId'>;
+		const { name, parentId } = req.body as Pick<
+			FolderModel,
+			'name' | 'parentId'
+		>;
 		const userId = (req.user as UserModel).id;
 
 		if (parentId) {
@@ -75,6 +78,41 @@ export const updateFolder = async (
 	}
 };
 
+export const moveFolder = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const id = Number(req.params.id);
+		const userId = (req.user as UserModel).id;
+		const { parentId } = req.body as { parentId: null | number };
+
+		const folder = await prisma.folder.findFirst({
+			where: { id, ownerId: userId },
+		});
+		if (!folder) return res.status(404).json({ error: 'Folder not found' });
+		if (parentId === id)
+			return res.status(400).json({ error: 'Cannot move folder into itself' });
+
+		if (parentId) {
+			const target = await prisma.folder.findFirst({
+				where: { id: parentId, ownerId: userId },
+			});
+			if (!target)
+				return res.status(404).json({ error: 'Target folder not found' });
+		}
+
+		const updated = await prisma.folder.update({
+			data: { parentId: parentId ?? null },
+			where: { id },
+		});
+		res.json(updated);
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const toggleFolderStar = async (
 	req: Request,
 	res: Response,
@@ -83,7 +121,9 @@ export const toggleFolderStar = async (
 	try {
 		const id = Number(req.params.id);
 		const userId = (req.user as UserModel).id;
-		const folder = await prisma.folder.findFirst({ where: { id, ownerId: userId } });
+		const folder = await prisma.folder.findFirst({
+			where: { id, ownerId: userId },
+		});
 		if (!folder) return res.status(404).json({ error: 'Folder not found' });
 		const updated = await prisma.folder.update({
 			data: { starred: !folder.starred },

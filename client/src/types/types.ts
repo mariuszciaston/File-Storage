@@ -9,6 +9,11 @@ export interface AuthRedirectProps {
   children: React.ReactNode;
 }
 
+export interface DragItem {
+  id: number;
+  type: "file" | "folder";
+}
+
 export interface FileItem {
   folderId: null | number;
   id: number;
