@@ -181,21 +181,35 @@ export const downloadFolder = async (
 		res.attachment(`${folder.name}.zip`);
 		archive.pipe(res);
 
-		function appendFolder(folderId: number, archivePath: string) {
-			for (const file of files.filter((item) => item.folderId === folderId)) {
-				archive.file(path.resolve(file.url), {
-					name: path.join(archivePath, file.name),
-				});
-			}
+		async function appendFolder(
+			folderId: number,
+			archivePath: string,
+		): Promise<void> {
+			await Promise.all([
+				...files
+					.filter((item) => item.folderId === folderId)
+					.map(async (file) => {
+						const name = path.join(archivePath, file.name);
+						if (!file.url.startsWith('http')) {
+							archive.file(path.resolve(file.url), { name });
+							return;
+						}
 
-			for (const child of folders.filter(
-				(item) => item.parentId === folderId,
-			)) {
-				appendFolder(child.id, path.join(archivePath, child.name));
-			}
+						const response = await fetch(file.url);
+						if (!response.ok)
+							throw new Error(`Failed to fetch ${file.name} from Cloudinary`);
+
+						archive.append(Buffer.from(await response.arrayBuffer()), { name });
+					}),
+				...folders
+					.filter((item) => item.parentId === folderId)
+					.map((child) =>
+						appendFolder(child.id, path.join(archivePath, child.name)),
+					),
+			]);
 		}
 
-		appendFolder(folder.id, folder.name);
+		await appendFolder(folder.id, folder.name);
 		await archive.finalize();
 	} catch (error) {
 		next(error);

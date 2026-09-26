@@ -4,6 +4,7 @@ import path from 'path';
 
 import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
+import { uploadToCloudinary } from '../middlewares/upload.js';
 
 export const previewFile = async (
 	req: Request,
@@ -17,6 +18,7 @@ export const previewFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
+		if (file.url.startsWith('http')) return res.redirect(file.url);
 		res.sendFile(path.resolve(file.url));
 	} catch (error) {
 		next(error);
@@ -35,6 +37,7 @@ export const downloadFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
+		if (file.url.startsWith('http')) return res.redirect(file.url);
 		res.download(path.resolve(file.url), file.name);
 	} catch (error) {
 		next(error);
@@ -63,13 +66,15 @@ export const uploadFile = async (
 			}
 		}
 
+		const url = await uploadToCloudinary(req.file.buffer, userId);
+
 		const file = await prisma.file.create({
 			data: {
 				folderId,
 				name: req.file.originalname,
 				ownerId: userId,
 				size: req.file.size,
-				url: req.file.path,
+				url,
 			},
 		});
 
@@ -182,7 +187,8 @@ export const deleteFile = async (
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 
-		await fs.unlink(file.url).catch(() => null);
+		if (!file.url.startsWith('http'))
+			await fs.unlink(file.url).catch(() => null);
 		await prisma.file.delete({ where: { id } });
 
 		res.json({ message: 'File deleted' });
