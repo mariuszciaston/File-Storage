@@ -9,12 +9,24 @@ const hashedPassword = bcrypt.hashSync(pass, 10);
 async function main() {
 	const user = await prisma.user.create({
 		data: {
-			fullname: 'Admin Adminowski',
+			fullname: 'Guest user',
 			password: hashedPassword,
-			username: 'admin',
+			username: 'guest',
 		},
 	});
 	console.log('Created user:', user);
+
+	const folder1 = await prisma.folder.create({
+		data: { name: 'Images', ownerId: user.id, parentId: null },
+	});
+
+	console.log('Created folder:', folder1.name);
+
+	const folder2 = await prisma.folder.create({
+		data: { name: 'Documents', ownerId: user.id, parentId: null },
+	});
+
+	console.log('Created folder:', folder2.name);
 }
 
 main()
