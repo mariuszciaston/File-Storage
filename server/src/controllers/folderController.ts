@@ -190,11 +190,6 @@ export const downloadFolder = async (
 					.filter((item) => item.folderId === folderId)
 					.map(async (file) => {
 						const name = path.join(archivePath, file.name);
-						if (!file.secureUrl.startsWith('http')) {
-							archive.file(path.resolve(file.secureUrl), { name });
-							return;
-						}
-
 						const response = await fetch(file.secureUrl);
 						if (!response.ok)
 							throw new Error(`Failed to fetch ${file.name} from Cloudinary`);

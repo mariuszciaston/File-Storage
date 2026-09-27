@@ -1,6 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import fs from 'fs/promises';
-import path from 'path';
 
 import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
@@ -21,8 +19,7 @@ export const previewFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
-		if (file.secureUrl.startsWith('http')) return res.redirect(file.secureUrl);
-		res.sendFile(path.resolve(file.secureUrl));
+		res.redirect(file.secureUrl);
 	} catch (error) {
 		next(error);
 	}
@@ -40,8 +37,7 @@ export const downloadFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
-		if (file.secureUrl.startsWith('http')) return res.redirect(file.secureUrl);
-		res.download(path.resolve(file.secureUrl), file.name);
+		res.redirect(file.secureUrl);
 	} catch (error) {
 		next(error);
 	}
@@ -64,7 +60,6 @@ export const uploadFile = async (
 				where: { id: folderId, ownerId: userId },
 			});
 			if (!folder) {
-				await fs.unlink(req.file.path);
 				return res.status(404).json({ error: 'Folder not found' });
 			}
 		}
@@ -196,11 +191,7 @@ export const deleteFile = async (
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 
-		if (file.secureUrl.startsWith('http')) {
-			await deleteFromCloudinary(file, userId);
-		} else {
-			await fs.unlink(file.secureUrl).catch(() => null);
-		}
+		await deleteFromCloudinary(file, userId);
 		await prisma.file.delete({ where: { id } });
 
 		res.json({ message: 'File deleted' });
