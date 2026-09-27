@@ -17,11 +17,13 @@ export interface DragItem {
 export interface FileItem {
   folderId: null | number;
   id: number;
+  mimeType: string;
   name: string;
+  resourceType: "image" | "raw" | "video";
+  secureUrl: string;
   size: number;
   starred: boolean;
   updatedAt: string;
-  url: string;
 }
 
 export interface Folder {

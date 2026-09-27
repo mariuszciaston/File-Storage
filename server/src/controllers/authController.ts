@@ -12,7 +12,9 @@ export const register = async (
 ) => {
 	try {
 		const { fullname, password, passwordConfirmation, username } =
-			req.body as Pick<UserModel, 'fullname' | 'password' | 'username'> & { passwordConfirmation: string };
+			req.body as Pick<UserModel, 'fullname' | 'password' | 'username'> & {
+				passwordConfirmation: string;
+			};
 
 		if (password !== passwordConfirmation) {
 			return res.status(400).json({ error: 'Passwords do not match' });
@@ -43,23 +45,26 @@ export const register = async (
 export const login = [
 	(req: Request, res: Response, next: NextFunction) => {
 		(
-			passport.authenticate('local', (err: unknown, user: false | UserModel) => {
-				if (err) return next(err);
-				if (!user)
-					return res.status(401).json({ error: 'Invalid credentials' });
-
-				req.logIn(user, (err) => {
+			passport.authenticate(
+				'local',
+				(err: unknown, user: false | UserModel) => {
 					if (err) return next(err);
-					res.json({
-						message: 'Logged in successfully',
-						user: {
-							fullname: user.fullname,
-							id: user.id,
-							username: user.username,
-						},
+					if (!user)
+						return res.status(401).json({ error: 'Invalid credentials' });
+
+					req.logIn(user, (err) => {
+						if (err) return next(err);
+						res.json({
+							message: 'Logged in successfully',
+							user: {
+								fullname: user.fullname,
+								id: user.id,
+								username: user.username,
+							},
+						});
 					});
-				});
-			}) as RequestHandler
+				},
+			) as RequestHandler
 		)(req, res, next);
 	},
 ];

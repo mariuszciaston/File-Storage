@@ -44,15 +44,23 @@ model Folder {
   files File[]
 }
 
-model File {
-  id        Int      @id @default(autoincrement())
-  name      String
-  starred   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+enum CloudinaryResourceType {
+  image
+  video
+  raw
+}
 
-  size Int
-  url  String
+model File {
+  id           Int                    @id @default(autoincrement())
+  name         String
+  starred      Boolean                @default(false)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @default(now()) @updatedAt
+  size         Int
+  mimeType     String
+  resourceType CloudinaryResourceType
+  secureUrl    String
+  publicId     String
 
   ownerId Int
   owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)

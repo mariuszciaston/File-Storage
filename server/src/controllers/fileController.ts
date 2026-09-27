@@ -4,7 +4,10 @@ import path from 'path';
 
 import { UserModel } from '../../generated/prisma/models.js';
 import { prisma } from '../lib/prisma.js';
-import { uploadToCloudinary } from '../middlewares/upload.js';
+import {
+	deleteFromCloudinary,
+	uploadToCloudinary,
+} from '../services/cloudinaryService.js';
 
 export const previewFile = async (
 	req: Request,
@@ -18,8 +21,8 @@ export const previewFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
-		if (file.url.startsWith('http')) return res.redirect(file.url);
-		res.sendFile(path.resolve(file.url));
+		if (file.secureUrl.startsWith('http')) return res.redirect(file.secureUrl);
+		res.sendFile(path.resolve(file.secureUrl));
 	} catch (error) {
 		next(error);
 	}
@@ -37,8 +40,8 @@ export const downloadFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
-		if (file.url.startsWith('http')) return res.redirect(file.url);
-		res.download(path.resolve(file.url), file.name);
+		if (file.secureUrl.startsWith('http')) return res.redirect(file.secureUrl);
+		res.download(path.resolve(file.secureUrl), file.name);
 	} catch (error) {
 		next(error);
 	}
@@ -66,15 +69,21 @@ export const uploadFile = async (
 			}
 		}
 
-		const url = await uploadToCloudinary(req.file.buffer, userId);
+		const { publicId, resourceType, secureUrl } = await uploadToCloudinary(
+			req.file.buffer,
+			userId,
+		);
 
 		const file = await prisma.file.create({
 			data: {
 				folderId,
+				mimeType: req.file.mimetype,
 				name: req.file.originalname,
 				ownerId: userId,
+				publicId,
+				resourceType,
+				secureUrl,
 				size: req.file.size,
-				url,
 			},
 		});
 
@@ -187,8 +196,11 @@ export const deleteFile = async (
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 
-		if (!file.url.startsWith('http'))
-			await fs.unlink(file.url).catch(() => null);
+		if (file.secureUrl.startsWith('http')) {
+			await deleteFromCloudinary(file, userId);
+		} else {
+			await fs.unlink(file.secureUrl).catch(() => null);
+		}
 		await prisma.file.delete({ where: { id } });
 
 		res.json({ message: 'File deleted' });
