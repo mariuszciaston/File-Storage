@@ -19,7 +19,7 @@ export default function FolderView() {
   }>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renameError, setRenameError] = useState("");
-  const [view, setView] = useState<"box" | "row">("row");
+  const [view, setView] = useState<"box" | "row">("box");
   const [showStarred, setShowStarred] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   type SortKey = "name" | "size" | "updatedAt";
@@ -357,18 +357,8 @@ export default function FolderView() {
               </span>
             ))}
           </nav>
+
           <div className="flex gap-1">
-            <button
-              className={`rounded px-4 py-2 ${
-                view === "row"
-                  ? "bg-blue-500 text-white"
-                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-              onClick={() => setView("row")}
-              title="List view"
-            >
-              ☰ List
-            </button>
             <button
               className={`rounded px-4 py-2 ${
                 view === "box"
@@ -379,6 +369,18 @@ export default function FolderView() {
               title="Grid view"
             >
               ⊞ Grid
+            </button>
+
+            <button
+              className={`rounded px-4 py-2 ${
+                view === "row"
+                  ? "bg-blue-500 text-white"
+                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => setView("row")}
+              title="List view"
+            >
+              ☰ List
             </button>
           </div>
         </div>
