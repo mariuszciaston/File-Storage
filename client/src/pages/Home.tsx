@@ -16,7 +16,7 @@ export default function Home() {
         Home page
         <Link to="/register">Join now!</Link>
         <span>
-          Already have an account? <Link to="/login">Log In here</Link>
+          Already have an account? <Link to="/login">Login here</Link>
         </span>
       </Main>
       <Footer />

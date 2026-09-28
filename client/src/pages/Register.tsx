@@ -124,7 +124,7 @@ export default function Register() {
           </form>
 
           <p>
-            Already have an account? <a href="/login">Log In here</a>
+            Already have an account? <a href="/login">Login here</a>
           </p>
         </div>
       </Main>
