@@ -739,7 +739,7 @@ export default function FolderView() {
               <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {sortedFolders().map((folder) => (
                   <li
-                    className={`flex flex-col items-center gap-1 rounded bg-white p-3 text-center ${
+                    className={`flex min-w-0 flex-col items-center gap-1 rounded bg-white p-3 text-center ${
                       dragOver === folder.id
                         ? "outline outline-2 outline-blue-400"
                         : ""
@@ -768,7 +768,7 @@ export default function FolderView() {
                       <>
                         <input
                           autoFocus
-                          className={`rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                          className={`box-border w-full max-w-full min-w-0 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
                           onChange={(e) => {
                             setRenameValue(e.target.value);
                             setRenameError("");
@@ -861,7 +861,7 @@ export default function FolderView() {
                 ))}
                 {sortedFiles().map((file) => (
                   <li
-                    className="flex flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
+                    className="flex min-w-0 flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
                     draggable
                     key={file.id}
                     onDragEnd={() => {
@@ -877,7 +877,7 @@ export default function FolderView() {
                       <>
                         <input
                           autoFocus
-                          className={`w-full rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
+                          className={`box-border w-full max-w-full min-w-0 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
                           onChange={(e) => {
                             setRenameValue(e.target.value);
                             setRenameError("");
