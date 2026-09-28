@@ -926,12 +926,27 @@ export default function FolderView() {
                       </>
                     ) : (
                       <>
-                        <button
-                          className="text-3xl"
-                          onClick={() => setPreviewFile(file)}
-                        >
-                          📄
-                        </button>
+                        {file.mimeType.startsWith("image/") ? (
+                          <button
+                            className="w-full"
+                            onClick={() => setPreviewFile(file)}
+                            title={`Preview ${file.name}`}
+                          >
+                            <img
+                              alt={file.name}
+                              className="h-24 w-full rounded bg-gray-50 object-contain"
+                              loading="lazy"
+                              src={`/api/files/${file.id}/preview`}
+                            />
+                          </button>
+                        ) : (
+                          <button
+                            className="text-3xl"
+                            onClick={() => setPreviewFile(file)}
+                          >
+                            📄
+                          </button>
+                        )}
                         <button
                           className="w-full break-words hover:underline"
                           onClick={() => setPreviewFile(file)}
