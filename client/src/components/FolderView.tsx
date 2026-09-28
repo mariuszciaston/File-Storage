@@ -626,7 +626,8 @@ export default function FolderView() {
                       {renamingItem?.type === "file" &&
                         renamingItem.id === file.id && (
                           <span className="invisible">
-                            📄{"\u00A0"}
+                            {file.mimeType.startsWith("image/") ? "🏞️" : "📄"}
+                            {"\u00A0"}
                             {file.name}
                           </span>
                         )}
@@ -675,7 +676,8 @@ export default function FolderView() {
                           className="hover:underline"
                           onClick={() => setPreviewFile(file)}
                         >
-                          📄{"\u00A0"}
+                          {file.mimeType.startsWith("image/") ? "🏞️" : "📄"}
+                          {"\u00A0"}
                           {file.name}
                         </button>
                       )}
