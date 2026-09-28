@@ -266,9 +266,9 @@ export default function FolderView() {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 sm:flex-row">
       {/* Left column: actions */}
-      <div className="flex w-56 shrink-0 flex-col gap-4">
+      <div className="flex w-full shrink-0 flex-col gap-4 sm:w-56">
         {/* Create folder */}
         <button
           className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
@@ -304,7 +304,7 @@ export default function FolderView() {
       </div>
 
       {/* Right column: browser */}
-      <div className="flex-1 space-y-4">
+      <div className="w-full min-w-0 flex-1 space-y-4">
         {/* Search */}
         <input
           className="w-full rounded border px-3 py-1.5 text-sm"
@@ -315,7 +315,7 @@ export default function FolderView() {
         />
 
         {/* Breadcrumbs + view toggle */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <nav className="flex flex-wrap items-center gap-1">
             <button
               className={`cursor-pointer text-blue-600 hover:underline ${
@@ -408,7 +408,8 @@ export default function FolderView() {
                             openFolder(folder);
                           }}
                         >
-                          📁 {folder.name}
+                          📁{"\u00A0"}
+                          {folder.name}
                         </button>
                       </td>
                       <td className="px-3 py-2 text-gray-400">Folder</td>
@@ -428,7 +429,8 @@ export default function FolderView() {
                             setPreviewFile(file);
                           }}
                         >
-                          📄 {file.name}
+                          📄{"\u00A0"}
+                          {file.name}
                         </button>
                       </td>
                       <td className="px-3 py-2 text-gray-400">
@@ -497,7 +499,8 @@ export default function FolderView() {
                       {renamingItem?.type === "folder" &&
                         renamingItem.id === folder.id && (
                           <span className="invisible font-medium">
-                            📁 {folder.name}
+                            📁{"\u00A0"}
+                            {folder.name}
                           </span>
                         )}
                       {renamingItem?.type === "folder" &&
@@ -545,7 +548,8 @@ export default function FolderView() {
                           className="font-medium hover:underline"
                           onClick={() => openFolder(folder)}
                         >
-                          📁 {folder.name}
+                          📁{"\u00A0"}
+                          {folder.name}
                         </button>
                       )}
                     </td>
@@ -621,7 +625,10 @@ export default function FolderView() {
                     <td className="relative px-3 py-2">
                       {renamingItem?.type === "file" &&
                         renamingItem.id === file.id && (
-                          <span className="invisible">📄 {file.name}</span>
+                          <span className="invisible">
+                            📄{"\u00A0"}
+                            {file.name}
+                          </span>
                         )}
                       {renamingItem?.type === "file" &&
                       renamingItem.id === file.id ? (
@@ -668,7 +675,8 @@ export default function FolderView() {
                           className="hover:underline"
                           onClick={() => setPreviewFile(file)}
                         >
-                          📄 {file.name}
+                          📄{"\u00A0"}
+                          {file.name}
                         </button>
                       )}
                     </td>
@@ -738,7 +746,7 @@ export default function FolderView() {
         {!searchResults && view === "box" && (
           <>
             {(folders.length > 0 || files.length > 0) && (
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {sortedFolders().map((folder) => (
                   <li
                     className={`flex min-w-0 flex-col items-center gap-1 rounded bg-white p-3 text-center ${
