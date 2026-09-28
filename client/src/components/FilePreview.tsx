@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import type { FileItem } from "../types/types";
 
+import { getFileIcon } from "./fileIcon";
+
 interface Props {
   file: FileItem;
   onClose: () => void;
@@ -75,7 +77,7 @@ export default function FilePreview({ file, onClose }: Props) {
           {isText && <TextPreview src={src} />}
           {!isImage && !isVideo && !isAudio && !isPdf && !isText && (
             <div className="text-center text-gray-500">
-              <p className="mb-3 text-4xl">📄</p>
+              <p className="mb-3 text-4xl">{getFileIcon(file.mimeType)}</p>
               <p className="mb-4 text-sm">
                 No preview available for this file type.
               </p>

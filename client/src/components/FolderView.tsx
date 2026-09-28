@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { DragItem, FileItem, Folder } from "../types/types";
 
+import { getFileIcon } from "./fileIcon";
 import FilePreview from "./FilePreview";
 import FileUploader from "./FileUploader";
 
@@ -626,7 +627,7 @@ export default function FolderView() {
                       {renamingItem?.type === "file" &&
                         renamingItem.id === file.id && (
                           <span className="invisible">
-                            {file.mimeType.startsWith("image/") ? "🏞️" : "📄"}
+                            {getFileIcon(file.mimeType)}
                             {"\u00A0"}
                             {file.name}
                           </span>
@@ -676,7 +677,7 @@ export default function FolderView() {
                           className="hover:underline"
                           onClick={() => setPreviewFile(file)}
                         >
-                          {file.mimeType.startsWith("image/") ? "🏞️" : "📄"}
+                          {getFileIcon(file.mimeType)}
                           {"\u00A0"}
                           {file.name}
                         </button>
@@ -946,7 +947,7 @@ export default function FolderView() {
                             className="text-3xl"
                             onClick={() => setPreviewFile(file)}
                           >
-                            📄
+                            {getFileIcon(file.mimeType)}
                           </button>
                         )}
                         <button
