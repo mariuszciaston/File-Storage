@@ -101,8 +101,11 @@ export default function FolderView() {
   async function load() {
     const folderUrl =
       parentId != null ? `/api/folders?parentId=${parentId}` : "/api/folders";
-    const fileUrl =
-      parentId != null ? `/api/files?folderId=${parentId}` : "/api/files";
+    const fileUrl = showStarred
+      ? "/api/files?starred=true"
+      : parentId != null
+        ? `/api/files?folderId=${parentId}`
+        : "/api/files";
     const [foldersRes, filesRes] = await Promise.all([
       fetch(folderUrl),
       fetch(fileUrl),
@@ -115,8 +118,11 @@ export default function FolderView() {
     async function fetchData() {
       const folderUrl =
         parentId != null ? `/api/folders?parentId=${parentId}` : "/api/folders";
-      const fileUrl =
-        parentId != null ? `/api/files?folderId=${parentId}` : "/api/files";
+      const fileUrl = showStarred
+        ? "/api/files?starred=true"
+        : parentId != null
+          ? `/api/files?folderId=${parentId}`
+          : "/api/files";
       const [foldersRes, filesRes] = await Promise.all([
         fetch(folderUrl),
         fetch(fileUrl),
@@ -125,7 +131,7 @@ export default function FolderView() {
       if (filesRes.ok) setFiles(await filesRes.json());
     }
     fetchData();
-  }, [parentId]);
+  }, [parentId, showStarred]);
 
   async function createFolder() {
     if (!newFolderName.trim()) {
@@ -293,7 +299,7 @@ export default function FolderView() {
           }`}
           onClick={() => setShowStarred(true)}
         >
-          ★ Starred
+          Starred
         </button>
       </div>
 

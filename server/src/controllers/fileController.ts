@@ -122,7 +122,10 @@ export const getFiles = async (
 		const folderId = req.query.folderId ? Number(req.query.folderId) : null;
 
 		const files = await prisma.file.findMany({
-			where: { folderId, ownerId: userId },
+			where: {
+				ownerId: userId,
+				...(req.query.starred === 'true' ? { starred: true } : { folderId }),
+			},
 		});
 		res.json(files);
 	} catch (error) {
