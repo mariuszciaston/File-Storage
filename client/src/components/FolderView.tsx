@@ -621,7 +621,27 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
               </thead>
               <tbody>
                 {visibleFolders.map((folder) => (
-                  <tr key={`row-folder-${folder.id}`}>
+                  <tr
+                    className={`transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+                    draggable
+                    key={`row-folder-${folder.id}`}
+                    onDragEnd={() => {
+                      dragItem.current = null;
+                      setDragOver(null);
+                    }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragOver(folder.id);
+                    }}
+                    onDragStart={() => {
+                      dragItem.current = { id: folder.id, type: "folder" };
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      void handleDrop(folder.id);
+                    }}
+                  >
                     <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                       {renamingItem?.type === "folder" &&
                       renamingItem.id === folder.id ? (
@@ -660,7 +680,18 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                 ))}
                 {visibleFiles.map((file) => {
                   return (
-                    <tr key={`row-file-${file.id}`}>
+                    <tr
+                      className="transition-colors hover:outline-2 hover:outline-blue-600"
+                      draggable
+                      key={`row-file-${file.id}`}
+                      onDragEnd={() => {
+                        dragItem.current = null;
+                        setDragOver(null);
+                      }}
+                      onDragStart={() => {
+                        dragItem.current = { id: file.id, type: "file" };
+                      }}
+                    >
                       <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                         {renamingItem?.type === "file" &&
                         renamingItem.id === file.id ? (
