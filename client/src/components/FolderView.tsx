@@ -377,7 +377,7 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
           <>
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className="grid size-10.5 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-500">
+                <span className="grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl bg-blue-100 text-blue-500">
                   <Folder size={22} />
                 </span>
                 <div className="min-w-0 flex-1 text-left">
@@ -445,7 +445,7 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <span
-                  className={`grid size-10.5 shrink-0 place-items-center rounded-xl ${iconTone === "image" ? "bg-green-100 text-green-700" : iconTone === "pdf" ? "bg-red-100 text-red-600" : iconTone === "audio" ? "bg-purple-100 text-purple-600" : iconTone === "video" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}
+                  className={`grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl ${iconTone === "image" ? "bg-green-100 text-green-700" : iconTone === "pdf" ? "bg-red-100 text-red-600" : iconTone === "audio" ? "bg-purple-100 text-purple-600" : iconTone === "video" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}
                 >
                   <FileTypeIcon mimeType={file.mimeType} size={21} />
                 </span>
@@ -622,9 +622,17 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
               <tbody>
                 {visibleFolders.map((folder) => (
                   <tr
-                    className={`transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+                    className={`cursor-pointer transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
                     draggable
                     key={`row-folder-${folder.id}`}
+                    onClick={() => {
+                      if (
+                        renamingItem?.type !== "folder" ||
+                        renamingItem.id !== folder.id
+                      ) {
+                        openFolder(folder);
+                      }
+                    }}
                     onDragEnd={() => {
                       dragItem.current = null;
                       setDragOver(null);
@@ -657,8 +665,11 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                         />
                       ) : (
                         <button
-                          className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
-                          onClick={() => openFolder(folder)}
+                          className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openFolder(folder);
+                          }}
                         >
                           <Folder className="text-blue-500" size={19} />
                           <span className="overflow-hidden text-ellipsis">
@@ -681,9 +692,17 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                 {visibleFiles.map((file) => {
                   return (
                     <tr
-                      className="transition-colors hover:outline-2 hover:outline-blue-600"
+                      className="cursor-pointer transition-colors hover:outline-2 hover:outline-blue-600"
                       draggable
                       key={`row-file-${file.id}`}
+                      onClick={() => {
+                        if (
+                          renamingItem?.type !== "file" ||
+                          renamingItem.id !== file.id
+                        ) {
+                          setPreviewFile(file);
+                        }
+                      }}
                       onDragEnd={() => {
                         dragItem.current = null;
                         setDragOver(null);
@@ -707,7 +726,7 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                           />
                         ) : (
                           <button
-                            className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
+                            className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
                             onClick={() => setPreviewFile(file)}
                           >
                             <span className={fileIconColorClass(file.mimeType)}>
@@ -859,17 +878,16 @@ function ItemActions({
   }, [menuOpen, onCloseMenu]);
 
   return (
-    <div
-      className="relative shrink-0"
-      onClick={(event) => event.stopPropagation()}
-      ref={actionsRef}
-    >
+    <div className="relative shrink-0" ref={actionsRef}>
       <button
         aria-expanded={menuOpen}
         aria-haspopup="menu"
         aria-label="Open file actions"
         className="grid size-8 place-items-center rounded-full text-gray-700 hover:bg-gray-200"
-        onClick={onToggleMenu}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleMenu();
+        }}
         title="Actions"
       >
         <MoreVertical size={20} />
@@ -877,6 +895,7 @@ function ItemActions({
       {menuOpen && (
         <div
           className="absolute top-9 right-0 z-50 min-w-40 rounded-lg border border-gray-200 bg-white p-1 text-sm text-gray-700"
+          onClick={(event) => event.stopPropagation()}
           role="menu"
         >
           <button
