@@ -109,5 +109,5 @@ function TextPreview({ src }: { src: string }) {
       .catch(() => setText("Failed to load file."));
   }, [src]);
 
-  return <pre>{text ?? "Loading preview…"}</pre>;
+  return text === null ? null : <pre>{text}</pre>;
 }
