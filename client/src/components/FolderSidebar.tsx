@@ -23,7 +23,7 @@ export default function FolderSidebar({
       className="flex flex-col gap-2 sm:sticky sm:top-24 sm:self-start"
     >
       <button
-        className="mb-2 inline-flex min-h-14 cursor-pointer items-center gap-3 self-start rounded-2xl border border-gray-200 bg-white px-5 font-semibold text-gray-700 hover:outline-2 hover:outline-blue-600"
+        className="mb-2 inline-flex min-h-14 cursor-pointer items-center gap-3 self-start rounded-2xl border border-gray-200 bg-white px-5 font-semibold text-gray-700 transition hover:outline-2 hover:outline-blue-600"
         onClick={onNewFolder}
       >
         <FolderPlus size={20} /> New folder
