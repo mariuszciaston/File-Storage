@@ -48,6 +48,17 @@ const sizeLabel = (size: number) =>
     ? `${(size / 1024).toFixed(1)} KB`
     : `${(size / (1024 * 1024)).toFixed(1)} MB`;
 
+const fileIconColorClass = (mimeType: string) =>
+  mimeType.startsWith("image/")
+    ? "text-green-700"
+    : mimeType.startsWith("video/")
+      ? "text-amber-700"
+      : mimeType.startsWith("audio/")
+        ? "text-purple-600"
+        : mimeType === "application/pdf"
+          ? "text-red-600"
+          : "text-gray-500";
+
 export default function FolderView({ searchQuery }: { searchQuery: string }) {
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -629,7 +640,7 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                           className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
                           onClick={() => openFolder(folder)}
                         >
-                          <Folder size={19} />
+                          <Folder className="text-blue-500" size={19} />
                           <span className="overflow-hidden text-ellipsis">
                             {folder.name}
                           </span>
@@ -668,7 +679,12 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
                             className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
                             onClick={() => setPreviewFile(file)}
                           >
-                            <FileTypeIcon mimeType={file.mimeType} size={19} />
+                            <span className={fileIconColorClass(file.mimeType)}>
+                              <FileTypeIcon
+                                mimeType={file.mimeType}
+                                size={19}
+                              />
+                            </span>
                             <span className="overflow-hidden text-ellipsis">
                               {file.name}
                             </span>
