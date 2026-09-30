@@ -15,7 +15,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { DragItem, FileItem, Folder as FolderType } from "../types/types";
+interface DragItem {
+  id: number;
+  type: "file" | "folder";
+}
+
+import type { FileItem, Folder as FolderType } from "../types/types";
 
 import { FileTypeIcon } from "./FileIcons";
 import FilePreview from "./FilePreview";

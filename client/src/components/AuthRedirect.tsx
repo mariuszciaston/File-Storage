@@ -1,6 +1,8 @@
 import { Navigate } from "react-router-dom";
 
-import type { AuthRedirectProps } from "../types/types";
+interface AuthRedirectProps {
+  children: React.ReactNode;
+}
 
 import { useAuth } from "../hooks/useAuth";
 

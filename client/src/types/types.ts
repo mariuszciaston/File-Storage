@@ -1,19 +1,3 @@
-export interface AuthContextType {
-  loading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
-  user: null | User;
-}
-
-export interface AuthRedirectProps {
-  children: React.ReactNode;
-}
-
-export interface DragItem {
-  id: number;
-  type: "file" | "folder";
-}
-
 export interface FileItem {
   folderId: null | number;
   id: number;
@@ -34,10 +18,6 @@ export interface Folder {
   parentId: null | number;
   starred: boolean;
   updatedAt: string;
-}
-
-export interface ProtectedRouteProps {
-  children: React.ReactNode;
 }
 
 export interface User {
