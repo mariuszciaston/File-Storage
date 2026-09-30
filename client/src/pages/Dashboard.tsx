@@ -1,21 +1,21 @@
+import { useState } from "react";
+
 import FolderView from "../components/FolderView";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Main from "../components/Main";
 import Wrapper from "../components/Wrapper";
-import { useAuth } from "../hooks/useAuth";
 import { useTitle } from "../hooks/useTitle";
 
 export default function Dashboard() {
   useTitle("Dashboard");
-  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <Wrapper>
-      <Header />
+      <Header onSearchChange={setSearchQuery} searchQuery={searchQuery} />
       <Main>
-        <h1 className="mb-4 text-xl font-bold">Hello {user?.fullname}!</h1>
-        <FolderView />
+        <FolderView searchQuery={searchQuery} />
       </Main>
       <Footer />
     </Wrapper>

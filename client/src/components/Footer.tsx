@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="mx-auto flex w-full max-w-7xl items-center justify-center p-4 text-sm sm:p-8">
+    <footer className="mx-auto flex w-full max-w-7xl items-center justify-center p-4 text-sm text-gray-500 sm:px-8 sm:py-6">
       <span>Mariusz Ciastoń 2026 &nbsp;</span>
       <a
         href="https://github.com/mariuszciaston/"

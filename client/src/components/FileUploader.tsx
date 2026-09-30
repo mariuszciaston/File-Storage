@@ -1,3 +1,5 @@
+import { Upload } from "lucide-react";
+
 export default function FileUploader({
   folderId,
   onUploaded,
@@ -77,10 +79,10 @@ export default function FileUploader({
         type="file"
       />
       <label
-        className="flex cursor-pointer justify-center rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+        className="inline-flex min-h-14 cursor-pointer items-center gap-3 self-start rounded-2xl border border-gray-200 bg-white px-5 font-semibold text-gray-700 transition hover:outline-2 hover:outline-blue-600"
         htmlFor="file-upload"
       >
-        Upload file
+        <Upload aria-hidden="true" size={19} /> Upload file
       </label>
     </>
   );

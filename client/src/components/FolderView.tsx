@@ -1,105 +1,73 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  ArrowDownToLine,
+  Check,
+  ChevronRight,
+  FilePlus2,
+  Folder,
+  Grid2X2,
+  List,
+  MoreVertical,
+  Pencil,
+  Search,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { DragItem, FileItem, Folder } from "../types/types";
+import type { DragItem, FileItem, Folder as FolderType } from "../types/types";
 
-import { getFileIcon } from "./fileIcon";
+import { FileTypeIcon } from "./FileIcons";
 import FilePreview from "./FilePreview";
-import FileUploader from "./FileUploader";
+import FolderSidebar from "./FolderSidebar";
 
-export default function FolderView() {
-  const [folders, setFolders] = useState<Folder[]>([]);
+interface SearchResponse {
+  query: string;
+  results: SearchResults;
+}
+interface SearchResults {
+  files: FileItem[];
+  folders: FolderType[];
+}
+type SortKey = "name" | "size" | "updatedAt";
+
+const dateLabel = (date: string) =>
+  new Date(date).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+const sizeLabel = (size: number) =>
+  size < 1024 * 1024
+    ? `${(size / 1024).toFixed(1)} KB`
+    : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+
+export default function FolderView({ searchQuery }: { searchQuery: string }) {
+  const [folders, setFolders] = useState<FolderType[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = useState<Folder[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<FolderType | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<FolderType[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderError, setNewFolderError] = useState("");
-  const [renamingItem, setRenamingItem] = useState<null | {
-    id: number;
-    type: "file" | "folder";
-  }>(null);
+  const [renamingItem, setRenamingItem] = useState<DragItem | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renameError, setRenameError] = useState("");
-  const [view, setView] = useState<"box" | "row">("box");
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [showStarred, setShowStarred] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  type SortKey = "name" | "size" | "updatedAt";
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<null | {
-    files: FileItem[];
-    folders: Folder[];
-  }>(null);
+  const [searchResults, setSearchResults] = useState<null | SearchResponse>(
+    null,
+  );
   const [dragOver, setDragOver] = useState<"root" | null | number>(null);
+  const [openMenuKey, setOpenMenuKey] = useState<null | string>(null);
   const dragItem = useRef<DragItem | null>(null);
-  const searchTimer = useRef<null | ReturnType<typeof setTimeout>>(null);
-
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const q = e.target.value;
-    setSearchQuery(q);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (!q.trim()) {
-      setSearchResults(null);
-      return;
-    }
-    searchTimer.current = setTimeout(async () => {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`);
-      if (res.ok) setSearchResults(await res.json());
-    }, 300);
-  }
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortAsc((a) => !a);
-    else {
-      setSortKey(key);
-      setSortAsc(true);
-    }
-  }
-
-  function sortedFolders() {
-    const direction = sortAsc ? 1 : -1;
-
-    return [...folders]
-      .filter((f) => !showStarred || f.starred)
-      .sort((a, b) => {
-        if (sortKey === "updatedAt") {
-          return (
-            (new Date(a.updatedAt).getTime() -
-              new Date(b.updatedAt).getTime()) *
-            direction
-          );
-        }
-
-        return a.name.localeCompare(b.name) * direction;
-      });
-  }
-
-  function sortedFiles() {
-    const direction = sortAsc ? 1 : -1;
-
-    return [...files]
-      .filter((f) => !showStarred || f.starred)
-      .sort((a, b) => {
-        if (sortKey === "size") {
-          return (a.size - b.size) * direction;
-        }
-
-        if (sortKey === "updatedAt") {
-          return (
-            (new Date(a.updatedAt).getTime() -
-              new Date(b.updatedAt).getTime()) *
-            direction
-          );
-        }
-
-        return a.name.localeCompare(b.name) * direction;
-      });
-  }
-
   const parentId = currentFolder?.id ?? null;
 
-  async function load() {
+  const load = useCallback(async () => {
     const folderUrl =
       parentId != null ? `/api/folders?parentId=${parentId}` : "/api/folders";
     const fileUrl = showStarred
@@ -107,16 +75,16 @@ export default function FolderView() {
       : parentId != null
         ? `/api/files?folderId=${parentId}`
         : "/api/files";
-    const [foldersRes, filesRes] = await Promise.all([
+    const [foldersResponse, filesResponse] = await Promise.all([
       fetch(folderUrl),
       fetch(fileUrl),
     ]);
-    if (foldersRes.ok) setFolders(await foldersRes.json());
-    if (filesRes.ok) setFiles(await filesRes.json());
-  }
+    if (foldersResponse.ok) setFolders(await foldersResponse.json());
+    if (filesResponse.ok) setFiles(await filesResponse.json());
+  }, [parentId, showStarred]);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchItems() {
       const folderUrl =
         parentId != null ? `/api/folders?parentId=${parentId}` : "/api/folders";
       const fileUrl = showStarred
@@ -124,929 +92,666 @@ export default function FolderView() {
         : parentId != null
           ? `/api/files?folderId=${parentId}`
           : "/api/files";
-      const [foldersRes, filesRes] = await Promise.all([
+      const [foldersResponse, filesResponse] = await Promise.all([
         fetch(folderUrl),
         fetch(fileUrl),
       ]);
-      if (foldersRes.ok) setFolders(await foldersRes.json());
-      if (filesRes.ok) setFiles(await filesRes.json());
+      if (foldersResponse.ok) setFolders(await foldersResponse.json());
+      if (filesResponse.ok) setFiles(await filesResponse.json());
     }
-    fetchData();
+    void fetchItems();
   }, [parentId, showStarred]);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) return;
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}`,
+        );
+        const results = response.ok
+          ? ((await response.json()) as SearchResults)
+          : { files: [], folders: [] };
+        if (active) setSearchResults({ query, results });
+      } catch {
+        if (active) {
+          setSearchResults({ query, results: { files: [], folders: [] } });
+        }
+      }
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortAsc((ascending) => !ascending);
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  }
+
+  const sortedFolders = [...folders]
+    .filter((folder) => !showStarred || folder.starred)
+    .sort((a, b) => a.name.localeCompare(b.name) * (sortAsc ? 1 : -1));
+  const sortedFiles = [...files]
+    .filter((file) => !showStarred || file.starred)
+    .sort((a, b) => {
+      const direction = sortAsc ? 1 : -1;
+      if (sortKey === "size") return (a.size - b.size) * direction;
+      if (sortKey === "updatedAt") {
+        return (Date.parse(a.updatedAt) - Date.parse(b.updatedAt)) * direction;
+      }
+      return a.name.localeCompare(b.name) * direction;
+    });
+  const activeSearchResults =
+    searchResults?.query === searchQuery.trim() ? searchResults.results : null;
+  const visibleFolders = activeSearchResults?.folders ?? sortedFolders;
+  const visibleFiles = activeSearchResults?.files ?? sortedFiles;
+  const isSearchPending = Boolean(searchQuery.trim() && !activeSearchResults);
+  const hasItems = visibleFolders.length + visibleFiles.length > 0;
 
   async function createFolder() {
     if (!newFolderName.trim()) {
       setNewFolderError("Folder name cannot be empty");
       return;
     }
-    const res = await fetch("/api/folders", {
+    const response = await fetch("/api/folders", {
       body: JSON.stringify({ name: newFolderName.trim(), parentId }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
-    if (res.ok) {
+    if (response.ok) {
       setNewFolderName("");
       setNewFolderError("");
       setShowNewFolderModal(false);
-      load();
+      await load();
     } else {
-      const data = await res.json();
-      setNewFolderError(data.errors?.[0]?.msg ?? "Failed to create folder");
+      const data = await response.json();
+      setNewFolderError(data.errors?.[0]?.msg ?? "Could not create folder");
     }
   }
 
-  async function renameFolder(id: number) {
-    if (!renameValue.trim()) {
-      setRenameError("Folder name cannot be empty");
+  async function renameItem() {
+    if (!renamingItem || !renameValue.trim()) {
+      setRenameError("Name cannot be empty");
       return;
     }
-    const res = await fetch(`/api/folders/${id}`, {
+    const endpoint = renamingItem.type === "folder" ? "folders" : "files";
+    const response = await fetch(`/api/${endpoint}/${renamingItem.id}`, {
       body: JSON.stringify({ name: renameValue.trim() }),
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
     });
-    if (res.ok) {
-      setRenameError("");
+    if (response.ok) {
       setRenamingItem(null);
-      load();
+      setRenameError("");
+      await load();
     } else {
-      const data = await res.json();
-      setRenameError(data.errors?.[0]?.msg ?? "Failed to rename folder");
+      const data = await response.json();
+      setRenameError(data.errors?.[0]?.msg ?? "Could not rename item");
     }
   }
 
-  async function renameFile(id: number) {
-    if (!renameValue.trim()) {
-      setRenameError("File name cannot be empty");
-      return;
-    }
-    const res = await fetch(`/api/files/${id}`, {
-      body: JSON.stringify({ name: renameValue.trim() }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
+  async function deleteFolder(folder: FolderType) {
+    if (!confirm(`Delete “${folder.name}” and all its contents?`)) return;
+    const response = await fetch(`/api/folders/${folder.id}`, {
+      method: "DELETE",
     });
-    if (res.ok) {
-      setRenameError("");
-      setRenamingItem(null);
-      load();
-    } else {
-      const data = await res.json();
-      setRenameError(data.errors?.[0]?.msg ?? "Failed to rename file");
-    }
-  }
-
-  async function deleteFolder(id: number) {
-    if (!confirm("Delete this folder and all its contents?")) return;
-    const res = await fetch(`/api/folders/${id}`, { method: "DELETE" });
-    if (res.ok) load();
+    if (response.ok) await load();
   }
 
   async function deleteFile(file: FileItem) {
-    if (!confirm(`Delete "${file.name}"?`)) return;
-    const res = await fetch(`/api/files/${file.id}`, { method: "DELETE" });
-    if (res.ok) load();
+    if (!confirm(`Delete “${file.name}”?`)) return;
+    const response = await fetch(`/api/files/${file.id}`, { method: "DELETE" });
+    if (response.ok) await load();
   }
 
-  async function toggleFileStar(file: FileItem) {
-    const res = await fetch(`/api/files/${file.id}/star`, { method: "PATCH" });
-    if (res.ok) {
-      const updated: FileItem = await res.json();
-      setFiles((prev) => prev.map((f) => (f.id === file.id ? updated : f)));
-    }
-  }
-
-  async function toggleFolderStar(folder: Folder) {
-    const res = await fetch(`/api/folders/${folder.id}/star`, {
+  async function toggleStar(
+    item: FileItem | FolderType,
+    type: DragItem["type"],
+  ) {
+    const endpoint = type === "folder" ? "folders" : "files";
+    const response = await fetch(`/api/${endpoint}/${item.id}/star`, {
       method: "PATCH",
     });
-    if (res.ok) {
-      const updated: Folder = await res.json();
-      setFolders((prev) =>
-        prev.map((f) =>
-          f.id === folder.id ? { ...f, starred: updated.starred } : f,
+    if (!response.ok) return;
+    const updated = await response.json();
+    if (type === "folder") {
+      setFolders((previous) =>
+        previous.map((folder) =>
+          folder.id === item.id
+            ? { ...folder, starred: updated.starred }
+            : folder,
+        ),
+      );
+    } else {
+      setFiles((previous) =>
+        previous.map((file) =>
+          file.id === item.id ? { ...file, starred: updated.starred } : file,
         ),
       );
     }
   }
 
-  function openFolder(folder: Folder) {
-    setBreadcrumbs((prev) => [...prev, folder]);
-    setCurrentFolder(folder);
-  }
-
   async function handleDrop(targetFolderId: null | number) {
     const item = dragItem.current;
     if (!item || item.id === targetFolderId) return;
-    const url =
-      item.type === "folder"
-        ? `/api/folders/${item.id}/move`
-        : `/api/files/${item.id}/move`;
-    const body =
+    const endpoint = item.type === "folder" ? "folders" : "files";
+    const payload =
       item.type === "folder"
         ? { parentId: targetFolderId }
         : { folderId: targetFolderId };
-    const res = await fetch(url, {
-      body: JSON.stringify(body),
+    const response = await fetch(`/api/${endpoint}/${item.id}/move`, {
+      body: JSON.stringify(payload),
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
     });
-    if (res.ok) load();
+    if (response.ok) await load();
     dragItem.current = null;
     setDragOver(null);
   }
 
   function navigateTo(index: number) {
-    if (index === -1) {
-      setBreadcrumbs([]);
-      setCurrentFolder(null);
-    } else {
-      const target = breadcrumbs[index];
-      setBreadcrumbs((prev) => prev.slice(0, index + 1));
-      setCurrentFolder(target);
-    }
+    const path = index < 0 ? [] : breadcrumbs.slice(0, index + 1);
+    setBreadcrumbs(path);
+    setCurrentFolder(path.at(-1) ?? null);
+  }
+
+  function openFolder(folder: FolderType) {
+    setBreadcrumbs((previous) => [...previous, folder]);
+    setCurrentFolder(folder);
+  }
+
+  function beginRename(item: DragItem, name: string) {
+    setRenamingItem(item);
+    setRenameValue(name);
+    setRenameError("");
+  }
+
+  function clearRename() {
+    setRenamingItem(null);
+    setRenameError("");
+  }
+
+  function renderFolderActions(folder: FolderType) {
+    return (
+      <ItemActions
+        downloadUrl={`/api/folders/${folder.id}/download`}
+        menuOpen={openMenuKey === `folder-${folder.id}`}
+        onCloseMenu={() => setOpenMenuKey(null)}
+        onDelete={() => void deleteFolder(folder)}
+        onRename={() =>
+          beginRename({ id: folder.id, type: "folder" }, folder.name)
+        }
+        onToggleMenu={() =>
+          setOpenMenuKey((key) =>
+            key === `folder-${folder.id}` ? null : `folder-${folder.id}`,
+          )
+        }
+        onToggleStar={() => void toggleStar(folder, "folder")}
+        starred={folder.starred}
+      />
+    );
+  }
+
+  function renderFileActions(file: FileItem) {
+    return (
+      <ItemActions
+        downloadUrl={`/api/files/${file.id}/download`}
+        menuOpen={openMenuKey === `file-${file.id}`}
+        onCloseMenu={() => setOpenMenuKey(null)}
+        onDelete={() => void deleteFile(file)}
+        onRename={() => beginRename({ id: file.id, type: "file" }, file.name)}
+        onToggleMenu={() =>
+          setOpenMenuKey((key) =>
+            key === `file-${file.id}` ? null : `file-${file.id}`,
+          )
+        }
+        onToggleStar={() => void toggleStar(file, "file")}
+        starred={file.starred}
+      />
+    );
+  }
+
+  function renderFolder(folder: FolderType) {
+    const isRenaming =
+      renamingItem?.type === "folder" && renamingItem.id === folder.id;
+    return (
+      <article
+        className={`relative min-w-0 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${!isRenaming ? "cursor-pointer" : ""} ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+        draggable
+        key={`folder-${folder.id}`}
+        onClick={() => {
+          if (!isRenaming) openFolder(folder);
+        }}
+        onDragEnd={() => {
+          dragItem.current = null;
+          setDragOver(null);
+        }}
+        onDragLeave={() => setDragOver(null)}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragOver(folder.id);
+        }}
+        onDragStart={() => {
+          dragItem.current = { id: folder.id, type: "folder" };
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          void handleDrop(folder.id);
+        }}
+      >
+        {isRenaming ? (
+          <RenameField
+            error={renameError}
+            onCancel={clearRename}
+            onChange={(value) => {
+              setRenameValue(value);
+              setRenameError("");
+            }}
+            onSave={() => void renameItem()}
+            value={renameValue}
+          />
+        ) : (
+          <>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="grid size-10.5 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-500">
+                  <Folder size={22} />
+                </span>
+                <div className="min-w-0 flex-1 text-left">
+                  <button
+                    className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openFolder(folder);
+                    }}
+                    title={folder.name}
+                  >
+                    {folder.name}
+                  </button>
+                </div>
+              </div>
+              {renderFolderActions(folder)}
+            </div>
+          </>
+        )}
+      </article>
+    );
+  }
+
+  function renderFile(file: FileItem) {
+    const isRenaming =
+      renamingItem?.type === "file" && renamingItem.id === file.id;
+    const iconTone = file.mimeType.startsWith("image/")
+      ? "image"
+      : file.mimeType.startsWith("video/")
+        ? "video"
+        : file.mimeType.startsWith("audio/")
+          ? "audio"
+          : file.mimeType === "application/pdf"
+            ? "pdf"
+            : "";
+    return (
+      <article
+        className={`relative flex h-full min-w-0 flex-col gap-2 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${!isRenaming ? "cursor-pointer" : ""}`}
+        draggable
+        key={`file-${file.id}`}
+        onClick={() => {
+          if (!isRenaming) setPreviewFile(file);
+        }}
+        onDragEnd={() => {
+          dragItem.current = null;
+          setDragOver(null);
+        }}
+        onDragStart={() => {
+          dragItem.current = { id: file.id, type: "file" };
+        }}
+      >
+        {isRenaming ? (
+          <RenameField
+            error={renameError}
+            onCancel={clearRename}
+            onChange={(value) => {
+              setRenameValue(value);
+              setRenameError("");
+            }}
+            onSave={() => void renameItem()}
+            value={renameValue}
+          />
+        ) : (
+          <>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span
+                  className={`grid size-10.5 shrink-0 place-items-center rounded-xl ${iconTone === "image" ? "bg-green-100 text-green-700" : iconTone === "pdf" ? "bg-red-100 text-red-600" : iconTone === "audio" ? "bg-purple-100 text-purple-600" : iconTone === "video" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}
+                >
+                  <FileTypeIcon mimeType={file.mimeType} size={21} />
+                </span>
+                <div className="min-w-0 flex-1 text-left">
+                  <button
+                    className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setPreviewFile(file);
+                    }}
+                    title={file.name}
+                  >
+                    {file.name}
+                  </button>
+                </div>
+              </div>
+              {renderFileActions(file)}
+            </div>
+            {file.mimeType.startsWith("image/") ? (
+              <button
+                aria-label={`Preview ${file.name}`}
+                className="block h-27.5 w-full cursor-pointer rounded-[0.6rem] border border-gray-200 bg-white p-0"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setPreviewFile(file);
+                }}
+              >
+                <img
+                  alt=""
+                  className="h-full w-full rounded-[0.6rem] object-contain"
+                  loading="lazy"
+                  src={`/api/files/${file.id}/preview`}
+                />
+              </button>
+            ) : (
+              <div className="grid h-27.5 w-full place-items-center rounded-[0.6rem] border border-gray-200 bg-white text-gray-500">
+                <FileTypeIcon mimeType={file.mimeType} size={32} />
+              </div>
+            )}
+          </>
+        )}
+      </article>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6 sm:flex-row">
-      {/* Left column: actions */}
-      <div className="flex w-full shrink-0 flex-col gap-4 sm:w-56">
-        {/* Create folder */}
-        <button
-          className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-          onClick={() => setShowNewFolderModal(true)}
-        >
-          New folder
-        </button>
+    <section className="grid flex-1 grid-cols-1 grid-rows-[auto_minmax(540px,1fr)] items-stretch gap-6 sm:grid-cols-[240px_minmax(0,1fr)] sm:grid-rows-1">
+      <FolderSidebar
+        folderId={parentId ?? undefined}
+        onNewFolder={() => setShowNewFolderModal(true)}
+        onShowStarredChange={setShowStarred}
+        onUploaded={() => void load()}
+        showStarred={showStarred}
+      />
 
-        {/* Upload */}
-        <FileUploader folderId={parentId ?? undefined} onUploaded={load} />
-        <hr></hr>
-        {/* Starred */}
-        <button
-          className={`cursor-pointer rounded px-4 py-2 text-left ${
-            !showStarred
-              ? "bg-blue-500 text-white"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-          onClick={() => setShowStarred(false)}
-        >
-          All
-        </button>
-        <button
-          className={`cursor-pointer rounded px-4 py-2 text-left ${
-            showStarred
-              ? "bg-yellow-400 text-white"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-          onClick={() => setShowStarred(true)}
-        >
-          Starred
-        </button>
-      </div>
-
-      {/* Right column: browser */}
-      <div className="w-full min-w-0 flex-1 space-y-4">
-        {/* Search */}
-        <input
-          className="w-full rounded border px-3 py-1.5 text-sm"
-          onChange={handleSearchChange}
-          placeholder="Search files and folders…"
-          type="search"
-          value={searchQuery}
-        />
-
-        {/* Breadcrumbs + view toggle */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <nav className="flex flex-wrap items-center gap-1">
+      <div className="h-full min-h-135 min-w-0 rounded-[1.25rem] bg-white p-4 sm:p-7">
+        <div className="min-h-10.5tems-center mb-5 flex justify-between gap-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex min-w-0 flex-wrap items-center gap-1 text-gray-500"
+          >
             <button
-              className={`cursor-pointer text-blue-600 hover:underline ${
-                dragOver === "root" ? "rounded bg-blue-100 px-1" : ""
-              }`}
+              className={`-ml-2 max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${breadcrumbs.length === 0 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === "root" ? "outline-2 outline-blue-600" : ""}`}
               onClick={() => navigateTo(-1)}
               onDragLeave={() => setDragOver(null)}
-              onDragOver={(e) => {
-                e.preventDefault();
+              onDragOver={(event) => {
+                event.preventDefault();
                 setDragOver("root");
               }}
-              onDrop={(e) => {
-                e.preventDefault();
-                handleDrop(null);
+              onDrop={(event) => {
+                event.preventDefault();
+                void handleDrop(null);
               }}
             >
-              Storage
+              My Drive
             </button>
-            {breadcrumbs.map((b, i) => (
-              <span className="flex items-center gap-1" key={b.id}>
-                <span>{">"}</span>
+            {breadcrumbs.map((breadcrumb, index) => (
+              <span className="flex items-center gap-1" key={breadcrumb.id}>
+                <ChevronRight aria-hidden="true" size={16} />
                 <button
-                  className={`cursor-pointer text-blue-600 hover:underline ${
-                    dragOver === b.id ? "rounded bg-blue-100 px-1" : ""
-                  }`}
-                  onClick={() => navigateTo(i)}
-                  onDragLeave={() => setDragOver(null)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOver(b.id);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleDrop(b.id);
-                  }}
+                  className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""}`}
+                  onClick={() => navigateTo(index)}
                 >
-                  {b.name}
+                  {breadcrumb.name}
                 </button>
               </span>
             ))}
           </nav>
-
-          <div className="flex gap-1">
+          <div
+            aria-label="View mode"
+            className="flex gap-0 rounded-full border border-gray-200 p-0.75"
+          >
             <button
-              className={`rounded px-4 py-2 ${
-                view === "box"
-                  ? "bg-blue-500 text-white"
-                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-              onClick={() => setView("box")}
+              aria-label="Grid view"
+              className={`grid size-9 place-items-center rounded-full text-gray-500 ${view === "grid" ? "bg-blue-100 text-blue-800" : ""}`}
+              onClick={() => setView("grid")}
               title="Grid view"
             >
-              ⊞ Grid
+              <Grid2X2 size={17} />
             </button>
-
             <button
-              className={`rounded px-4 py-2 ${
-                view === "row"
-                  ? "bg-blue-500 text-white"
-                  : "cursor-pointer bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-              onClick={() => setView("row")}
+              aria-label="List view"
+              className={`grid size-9 place-items-center rounded-full text-gray-500 ${view === "list" ? "bg-blue-100 text-blue-800" : ""}`}
+              onClick={() => setView("list")}
               title="List view"
             >
-              ☰ List
+              <List size={18} />
             </button>
           </div>
         </div>
 
-        {/* Search results */}
-        {searchResults && (
-          <div className="space-y-1">
-            {searchResults.folders.length === 0 &&
-            searchResults.files.length === 0 ? (
-              <p className="text-sm text-gray-400">No results found.</p>
-            ) : (
-              <table className="w-full text-sm">
-                <tbody>
-                  {searchResults.folders.map((folder) => (
-                    <tr
-                      className="border-b bg-white hover:bg-gray-50"
-                      key={`sf-${folder.id}`}
-                    >
-                      <td className="px-3 py-2">
-                        <button
-                          className="font-medium hover:underline"
-                          onClick={() => {
-                            setSearchQuery("");
-                            setSearchResults(null);
-                            openFolder(folder);
-                          }}
-                        >
-                          📁{"\u00A0"}
-                          {folder.name}
-                        </button>
-                      </td>
-                      <td className="px-3 py-2 text-gray-400">Folder</td>
-                    </tr>
-                  ))}
-                  {searchResults.files.map((file) => (
-                    <tr
-                      className="border-b bg-white hover:bg-gray-50"
-                      key={`sfi-${file.id}`}
-                    >
-                      <td className="px-3 py-2">
-                        <button
-                          className="hover:underline"
-                          onClick={() => {
-                            setSearchQuery("");
-                            setSearchResults(null);
-                            setPreviewFile(file);
-                          }}
-                        >
-                          📄{"\u00A0"}
-                          {file.name}
-                        </button>
-                      </td>
-                      <td className="px-3 py-2 text-gray-400">
-                        {(file.size / 1024).toFixed(1)} KB
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+        {isSearchPending ? (
+          <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
+            <p className="text-sm">Searching…</p>
           </div>
-        )}
-
-        {/* List view: sortable table */}
-        {!searchResults &&
-          view === "row" &&
-          (folders.length > 0 || files.length > 0) && (
-            <table className="w-full text-sm">
+        ) : searchQuery.trim() && activeSearchResults && !hasItems ? (
+          <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
+            <div>
+              <div className="mx-auto mb-4 grid size-19 place-items-center rounded-full bg-gray-100">
+                <Search size={30} />
+              </div>
+              <h2 className="mb-1 text-base font-medium text-gray-700">
+                No matches found
+              </h2>
+              <p className="text-sm">Try another name or search term.</p>
+            </div>
+          </div>
+        ) : hasItems ? (
+          view === "grid" ? (
+            <>
+              {visibleFolders.length > 0 && (
+                <>
+                  <h2 className="mt-6 mb-3 text-sm font-semibold text-gray-700">
+                    Folders
+                  </h2>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3">
+                    {visibleFolders.map(renderFolder)}
+                  </div>
+                </>
+              )}
+              {visibleFiles.length > 0 && (
+                <>
+                  <h2 className="mt-6 mb-3 text-sm font-semibold text-gray-700">
+                    Files
+                  </h2>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3">
+                    {visibleFiles.map(renderFile)}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <table className="w-full border-collapse text-[0.86rem]">
               <thead>
-                <tr className="border-b text-left text-gray-500">
+                <tr className="text-left">
                   {(["name", "size", "updatedAt"] as const).map((key) => (
                     <th
-                      className="cursor-pointer px-3 py-2 select-none hover:text-gray-800"
+                      className="border-b border-gray-200 px-3 py-2.5 text-xs font-medium whitespace-nowrap text-gray-500"
                       key={key}
-                      onClick={() => toggleSort(key)}
                     >
-                      {key === "name"
-                        ? "Name"
-                        : key === "size"
-                          ? "Size"
-                          : "Last modified"}
-                      {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
+                      <button className="p-0" onClick={() => toggleSort(key)}>
+                        {key === "name"
+                          ? "Name"
+                          : key === "size"
+                            ? "File size"
+                            : "Last modified"}
+                        {sortKey === key ? (sortAsc ? " ↑" : " ↓") : ""}
+                      </button>
                     </th>
                   ))}
-                  <th className="px-3 py-2 text-left">Actions</th>
+                  <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
-                {sortedFolders().map((folder) => (
-                  <tr
-                    className={`border-b bg-white hover:bg-gray-50 ${
-                      dragOver === folder.id
-                        ? "outline outline-2 outline-blue-400"
-                        : ""
-                    }`}
-                    draggable
-                    key={`folder-${folder.id}`}
-                    onDragEnd={() => {
-                      dragItem.current = null;
-                      setDragOver(null);
-                    }}
-                    onDragLeave={() => setDragOver(null)}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOver(folder.id);
-                    }}
-                    onDragStart={() => {
-                      dragItem.current = { id: folder.id, type: "folder" };
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      handleDrop(folder.id);
-                    }}
-                  >
-                    <td className="relative px-3 py-2">
-                      {renamingItem?.type === "folder" &&
-                        renamingItem.id === folder.id && (
-                          <span className="invisible font-medium">
-                            📁{"\u00A0"}
-                            {folder.name}
-                          </span>
-                        )}
+                {visibleFolders.map((folder) => (
+                  <tr key={`row-folder-${folder.id}`}>
+                    <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                       {renamingItem?.type === "folder" &&
                       renamingItem.id === folder.id ? (
-                        <span className="absolute inset-0 flex items-center gap-2 px-3">
-                          <input
-                            autoFocus
-                            className={`min-w-0 flex-1 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
-                            onChange={(e) => {
-                              setRenameValue(e.target.value);
-                              setRenameError("");
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") renameFolder(folder.id);
-                              if (e.key === "Escape") {
-                                setRenamingItem(null);
-                                setRenameError("");
-                              }
-                            }}
-                            value={renameValue}
-                          />
-                          <button
-                            className="shrink-0 text-green-600 hover:underline"
-                            onClick={() => renameFolder(folder.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="shrink-0 text-gray-500 hover:underline"
-                            onClick={() => {
-                              setRenamingItem(null);
-                              setRenameError("");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          {renameError && (
-                            <span className="absolute top-full left-3 z-10 text-xs text-red-500">
-                              {renameError}
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <button
-                          className="font-medium hover:underline"
-                          onClick={() => openFolder(folder)}
-                        >
-                          📁{"\u00A0"}
-                          {folder.name}
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-gray-400">—</td>
-                    <td className="px-3 py-2 text-gray-400">
-                      {new Date(folder.updatedAt).toLocaleString(undefined, {
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        month: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="flex gap-2 text-gray-500">
-                        <button
-                          className="hover:text-yellow-500"
-                          onClick={() => {
-                            setRenamingItem({ id: folder.id, type: "folder" });
-                            setRenameValue(folder.name);
+                        <RenameField
+                          error={renameError}
+                          onCancel={clearRename}
+                          onChange={(value) => {
+                            setRenameValue(value);
                             setRenameError("");
                           }}
-                          title="Rename"
-                        >
-                          ✏️
-                        </button>
+                          onSave={() => void renameItem()}
+                          value={renameValue}
+                        />
+                      ) : (
                         <button
-                          className="hover:text-red-500"
-                          onClick={() => deleteFolder(folder.id)}
-                          title="Delete"
+                          className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
+                          onClick={() => openFolder(folder)}
                         >
-                          🗑️
-                        </button>
-                        <button className="hover:text-blue-500" title="Share">
-                          🔗
-                        </button>
-                        <a
-                          className="hover:text-green-500"
-                          download
-                          href={`/api/folders/${folder.id}/download`}
-                          title="Download"
-                        >
-                          ⬇️
-                        </a>
-                        <button
-                          className={
-                            folder.starred
-                              ? "text-yellow-400"
-                              : "hover:text-yellow-400"
-                          }
-                          onClick={() => toggleFolderStar(folder)}
-                          title={folder.starred ? "Unstar" : "Star"}
-                        >
-                          {folder.starred ? "★" : "☆"}
-                        </button>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {sortedFiles().map((file) => (
-                  <tr
-                    className="border-b bg-white hover:bg-gray-50"
-                    draggable
-                    key={`file-${file.id}`}
-                    onDragEnd={() => {
-                      dragItem.current = null;
-                      setDragOver(null);
-                    }}
-                    onDragStart={() => {
-                      dragItem.current = { id: file.id, type: "file" };
-                    }}
-                  >
-                    <td className="relative px-3 py-2">
-                      {renamingItem?.type === "file" &&
-                        renamingItem.id === file.id && (
-                          <span className="invisible">
-                            {getFileIcon(file.mimeType)}
-                            {"\u00A0"}
-                            {file.name}
+                          <Folder size={19} />
+                          <span className="overflow-hidden text-ellipsis">
+                            {folder.name}
                           </span>
-                        )}
-                      {renamingItem?.type === "file" &&
-                      renamingItem.id === file.id ? (
-                        <span className="absolute inset-0 flex items-center gap-2 px-3">
-                          <input
-                            autoFocus
-                            className={`min-w-0 flex-1 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
-                            onChange={(e) => {
-                              setRenameValue(e.target.value);
-                              setRenameError("");
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") renameFile(file.id);
-                              if (e.key === "Escape") {
-                                setRenamingItem(null);
-                                setRenameError("");
-                              }
-                            }}
-                            value={renameValue}
-                          />
-                          <button
-                            className="shrink-0 text-green-600 hover:underline"
-                            onClick={() => renameFile(file.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="shrink-0 text-gray-500 hover:underline"
-                            onClick={() => {
-                              setRenamingItem(null);
-                              setRenameError("");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          {renameError && (
-                            <span className="absolute top-full left-3 z-10 text-xs text-red-500">
-                              {renameError}
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <button
-                          className="hover:underline"
-                          onClick={() => setPreviewFile(file)}
-                        >
-                          {getFileIcon(file.mimeType)}
-                          {"\u00A0"}
-                          {file.name}
                         </button>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-gray-400">
-                      {(file.size / 1024).toFixed(1)} KB
+                    <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                      —
                     </td>
-                    <td className="px-3 py-2 text-gray-400">
-                      {new Date(file.updatedAt).toLocaleString(undefined, {
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        month: "numeric",
-                        year: "numeric",
-                      })}
+                    <td className="h-13.5order-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                      {dateLabel(folder.updatedAt)}
                     </td>
-                    <td className="px-3 py-2">
-                      <span className="flex gap-2 text-gray-500">
-                        <button
-                          className="hover:text-yellow-500"
-                          onClick={() => {
-                            setRenamingItem({ id: file.id, type: "file" });
-                            setRenameValue(file.name);
-                            setRenameError("");
-                          }}
-                          title="Rename"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="hover:text-red-500"
-                          onClick={() => deleteFile(file)}
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                        <button className="hover:text-blue-500" title="Share">
-                          🔗
-                        </button>
-                        <a
-                          className="hover:text-green-500"
-                          download
-                          href={`/api/files/${file.id}/download`}
-                          title="Download"
-                        >
-                          ⬇️
-                        </a>
-                        <button
-                          className={
-                            file.starred
-                              ? "text-yellow-400"
-                              : "hover:text-yellow-400"
-                          }
-                          onClick={() => toggleFileStar(file)}
-                          title={file.starred ? "Unstar" : "Star"}
-                        >
-                          {file.starred ? "★" : "☆"}
-                        </button>
-                      </span>
+                    <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                      {renderFolderActions(folder)}
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          )}
-
-        {/* Grid view */}
-        {!searchResults && view === "box" && (
-          <>
-            {(folders.length > 0 || files.length > 0) && (
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {sortedFolders().map((folder) => (
-                  <li
-                    className={`flex min-w-0 flex-col items-center gap-1 rounded bg-white p-3 text-center ${
-                      dragOver === folder.id
-                        ? "outline outline-2 outline-blue-400"
-                        : ""
-                    }`}
-                    draggable
-                    key={folder.id}
-                    onDragEnd={() => {
-                      dragItem.current = null;
-                      setDragOver(null);
-                    }}
-                    onDragLeave={() => setDragOver(null)}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOver(folder.id);
-                    }}
-                    onDragStart={() => {
-                      dragItem.current = { id: folder.id, type: "folder" };
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      handleDrop(folder.id);
-                    }}
-                  >
-                    {renamingItem?.type === "folder" &&
-                    renamingItem.id === folder.id ? (
-                      <>
-                        <input
-                          autoFocus
-                          className={`box-border w-full max-w-full min-w-0 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
-                          onChange={(e) => {
-                            setRenameValue(e.target.value);
-                            setRenameError("");
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") renameFolder(folder.id);
-                            if (e.key === "Escape") {
-                              setRenamingItem(null);
-                              setRenameError("");
-                            }
-                          }}
-                          value={renameValue}
-                        />
-                        <button
-                          className="text-sm text-green-600 hover:underline"
-                          onClick={() => renameFolder(folder.id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="text-sm text-gray-500 hover:underline"
-                          onClick={() => {
-                            setRenamingItem(null);
-                            setRenameError("");
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        {renameError && (
-                          <p className="text-xs text-red-500">{renameError}</p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-3xl">📁</span>
-                        <button
-                          className="w-full text-sm font-medium break-words hover:underline"
-                          onClick={() => openFolder(folder)}
-                        >
-                          {folder.name}
-                        </button>
-                        <div className="flex gap-2 text-gray-500">
-                          <button
-                            className="hover:text-yellow-500"
-                            onClick={() => {
-                              setRenamingItem({
-                                id: folder.id,
-                                type: "folder",
-                              });
-                              setRenameValue(folder.name);
+                {visibleFiles.map((file) => {
+                  return (
+                    <tr key={`row-file-${file.id}`}>
+                      <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                        {renamingItem?.type === "file" &&
+                        renamingItem.id === file.id ? (
+                          <RenameField
+                            error={renameError}
+                            onCancel={clearRename}
+                            onChange={(value) => {
+                              setRenameValue(value);
                               setRenameError("");
                             }}
-                            title="Rename"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="hover:text-red-500"
-                            onClick={() => deleteFolder(folder.id)}
-                            title="Delete"
-                          >
-                            🗑️
-                          </button>
-                          <button className="hover:text-blue-500" title="Share">
-                            🔗
-                          </button>
-                          <a
-                            className="hover:text-green-500"
-                            download
-                            href={`/api/folders/${folder.id}/download`}
-                            title="Download"
-                          >
-                            ⬇️
-                          </a>
-                          <button
-                            className={
-                              folder.starred
-                                ? "text-yellow-400"
-                                : "hover:text-yellow-400"
-                            }
-                            onClick={() => toggleFolderStar(folder)}
-                            title={folder.starred ? "Unstar" : "Star"}
-                          >
-                            {folder.starred ? "★" : "☆"}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-                {sortedFiles().map((file) => (
-                  <li
-                    className="flex min-w-0 flex-col items-center gap-1 rounded bg-white p-3 text-center text-sm"
-                    draggable
-                    key={file.id}
-                    onDragEnd={() => {
-                      dragItem.current = null;
-                      setDragOver(null);
-                    }}
-                    onDragStart={() => {
-                      dragItem.current = { id: file.id, type: "file" };
-                    }}
-                  >
-                    {renamingItem?.type === "file" &&
-                    renamingItem.id === file.id ? (
-                      <>
-                        <input
-                          autoFocus
-                          className={`box-border w-full max-w-full min-w-0 rounded border px-2 py-0.5 text-sm ${renameError ? "border-red-400" : ""}`}
-                          onChange={(e) => {
-                            setRenameValue(e.target.value);
-                            setRenameError("");
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") renameFile(file.id);
-                            if (e.key === "Escape") {
-                              setRenamingItem(null);
-                              setRenameError("");
-                            }
-                          }}
-                          value={renameValue}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            className="text-sm text-green-600 hover:underline"
-                            onClick={() => renameFile(file.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="text-sm text-gray-500 hover:underline"
-                            onClick={() => {
-                              setRenamingItem(null);
-                              setRenameError("");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          {renameError && (
-                            <p className="text-xs text-red-500">
-                              {renameError}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {file.mimeType.startsWith("image/") ? (
-                          <button
-                            className="w-full"
-                            onClick={() => setPreviewFile(file)}
-                            title={`Preview ${file.name}`}
-                          >
-                            <img
-                              alt={file.name}
-                              className="h-24 w-full rounded bg-gray-50 object-contain"
-                              loading="lazy"
-                              src={`/api/files/${file.id}/preview`}
-                            />
-                          </button>
+                            onSave={() => void renameItem()}
+                            value={renameValue}
+                          />
                         ) : (
                           <button
-                            className="text-3xl"
+                            className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700"
                             onClick={() => setPreviewFile(file)}
                           >
-                            {getFileIcon(file.mimeType)}
+                            <FileTypeIcon mimeType={file.mimeType} size={19} />
+                            <span className="overflow-hidden text-ellipsis">
+                              {file.name}
+                            </span>
                           </button>
                         )}
-                        <button
-                          className="w-full break-words hover:underline"
-                          onClick={() => setPreviewFile(file)}
-                        >
-                          {file.name}
-                        </button>
-                        <div className="flex gap-2 text-gray-500">
-                          <button
-                            className="hover:text-yellow-500"
-                            onClick={() => {
-                              setRenamingItem({ id: file.id, type: "file" });
-                              setRenameValue(file.name);
-                              setRenameError("");
-                            }}
-                            title="Rename"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="hover:text-red-500"
-                            onClick={() => deleteFile(file)}
-                            title="Delete"
-                          >
-                            🗑️
-                          </button>
-                          <button className="hover:text-blue-500" title="Share">
-                            🔗
-                          </button>
-                          <a
-                            className="hover:text-green-500"
-                            download
-                            href={`/api/files/${file.id}/download`}
-                            title="Download"
-                          >
-                            ⬇️
-                          </a>
-                          <button
-                            className={
-                              file.starred
-                                ? "text-yellow-400"
-                                : "hover:text-yellow-400"
-                            }
-                            onClick={() => toggleFileStar(file)}
-                            title={file.starred ? "Unstar" : "Star"}
-                          >
-                            {file.starred ? "★" : "☆"}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+                      </td>
+                      <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                        {sizeLabel(file.size)}
+                      </td>
+                      <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                        {dateLabel(file.updatedAt)}
+                      </td>
+                      <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                        {renderFileActions(file)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )
+        ) : (
+          <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
+            <div>
+              <div className="mx-auto mb-4 grid size-19 place-items-center rounded-full bg-gray-100">
+                <FilePlus2 size={32} />
+              </div>
+              <h2 className="mb-1 text-base font-medium text-gray-700">
+                {showStarred ? "Nothing starred yet" : "Your space is ready"}
+              </h2>
+              <p className="text-sm">
+                {showStarred
+                  ? "Star files and folders to find them here."
+                  : "Create a folder or upload a file to get started."}
+              </p>
+            </div>
+          </div>
         )}
       </div>
+
       {previewFile && (
         <FilePreview file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
-      {/* New folder modal */}
       {showNewFolderModal && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 grid place-items-center bg-gray-900/40 p-4 backdrop-blur-sm"
           onClick={() => {
             setShowNewFolderModal(false);
             setNewFolderError("");
           }}
         >
-          <div
-            className="flex flex-col gap-3 rounded-lg bg-white p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
+          <section
+            aria-labelledby="new-folder-title"
+            aria-modal="true"
+            className="w-full max-w-110 rounded-3xl border border-gray-200 bg-white p-6"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
           >
-            <h2 className="text-sm font-semibold">New folder</h2>
-            <input
-              autoFocus
-              className={`rounded border px-2 py-1 text-sm ${newFolderError ? "border-red-400" : ""}`}
-              onChange={(e) => {
-                setNewFolderName(e.target.value);
-                setNewFolderError("");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") createFolder();
-                if (e.key === "Escape") {
-                  setShowNewFolderModal(false);
+            <h2 className="mb-5 text-xl font-medium" id="new-folder-title">
+              Create a folder
+            </h2>
+            <label
+              className="mb-4 grid gap-2 text-sm font-medium text-gray-700"
+              htmlFor="new-folder-name"
+            >
+              Folder name
+              <input
+                autoFocus
+                className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
+                id="new-folder-name"
+                onChange={(event) => {
+                  setNewFolderName(event.target.value);
                   setNewFolderError("");
-                }
-              }}
-              placeholder="Folder name"
-              value={newFolderName}
-            />
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void createFolder();
+                  if (event.key === "Escape") setShowNewFolderModal(false);
+                }}
+                placeholder="For example, Projects"
+                value={newFolderName}
+              />
+            </label>
             {newFolderError && (
-              <p className="text-xs text-red-500">{newFolderError}</p>
+              <p className="text-xs text-red-700">{newFolderError}</p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="rounded px-3 py-1 text-sm text-gray-500 hover:bg-gray-100"
+                className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100"
                 onClick={() => {
                   setShowNewFolderModal(false);
                   setNewFolderError("");
@@ -1055,14 +760,163 @@ export default function FolderView() {
                 Cancel
               </button>
               <button
-                className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
-                onClick={createFolder}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
+                onClick={() => void createFolder()}
               >
                 Create
               </button>
             </div>
-          </div>
+          </section>
         </div>
+      )}
+    </section>
+  );
+}
+
+function ItemActions({
+  downloadUrl,
+  menuOpen,
+  onCloseMenu,
+  onDelete,
+  onRename,
+  onToggleMenu,
+  onToggleStar,
+  starred,
+}: {
+  downloadUrl: string;
+  menuOpen: boolean;
+  onCloseMenu: () => void;
+  onDelete: () => void;
+  onRename: () => void;
+  onToggleMenu: () => void;
+  onToggleStar: () => void;
+  starred: boolean;
+}) {
+  const actionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!actionsRef.current?.contains(event.target as Node)) onCloseMenu();
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [menuOpen, onCloseMenu]);
+
+  return (
+    <div
+      className="relative shrink-0"
+      onClick={(event) => event.stopPropagation()}
+      ref={actionsRef}
+    >
+      <button
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+        aria-label="Open file actions"
+        className="grid size-8 place-items-center rounded-full text-gray-700 hover:bg-gray-200"
+        onClick={onToggleMenu}
+        title="Actions"
+      >
+        <MoreVertical size={20} />
+      </button>
+      {menuOpen && (
+        <div
+          className="absolute top-9 right-0 z-50 min-w-40 rounded-lg border border-gray-200 bg-white p-1 text-sm text-gray-700"
+          role="menu"
+        >
+          <button
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-gray-100"
+            onClick={() => {
+              onCloseMenu();
+              onRename();
+            }}
+            role="menuitem"
+          >
+            <Pencil size={16} /> Rename
+          </button>
+          <a
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 hover:bg-gray-100"
+            download
+            href={downloadUrl}
+            onClick={onCloseMenu}
+            role="menuitem"
+          >
+            <ArrowDownToLine size={16} /> Download
+          </a>
+          <button
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-gray-100"
+            onClick={() => {
+              onCloseMenu();
+              onToggleStar();
+            }}
+            role="menuitem"
+          >
+            <Star fill={starred ? "currentColor" : "none"} size={16} />
+            {starred ? "Remove star" : "Add star"}
+          </button>
+          <button
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-red-700 hover:bg-red-100"
+            onClick={() => {
+              onCloseMenu();
+              onDelete();
+            }}
+            role="menuitem"
+          >
+            <Trash2 size={16} /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RenameField({
+  error,
+  onCancel,
+  onChange,
+  onSave,
+  value,
+}: {
+  error: string;
+  onCancel: () => void;
+  onChange: (value: string) => void;
+  onSave: () => void;
+  value: string;
+}) {
+  return (
+    <div className="relative flex min-w-0 items-center gap-px">
+      <input
+        aria-label="New name"
+        autoFocus
+        className="h-9 w-full min-w-0 rounded-md border border-gray-300 px-2 outline-blue-600"
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") onSave();
+          if (event.key === "Escape") onCancel();
+        }}
+        value={value}
+      />
+      <button
+        aria-label="Save name"
+        className="grid size-8 shrink-0 place-items-center rounded-full text-gray-500 hover:bg-gray-100"
+        onClick={onSave}
+      >
+        <Check size={17} />
+      </button>
+      <button
+        aria-label="Cancel rename"
+        className="grid size-8 shrink-0 place-items-center rounded-full text-gray-500 hover:bg-gray-100"
+        onClick={onCancel}
+      >
+        <X size={17} />
+      </button>
+      {error && (
+        <span className="absolute bottom-0 left-3 text-xs text-red-700">
+          {error}
+        </span>
       )}
     </div>
   );

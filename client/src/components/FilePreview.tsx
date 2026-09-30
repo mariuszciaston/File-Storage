@@ -1,8 +1,9 @@
+import { ArrowDownToLine, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { FileItem } from "../types/types";
 
-import { getFileIcon } from "./fileIcon";
+import { FileTypeIcon } from "./FileIcons";
 
 interface Props {
   file: FileItem;
@@ -34,32 +35,39 @@ export default function FilePreview({ file, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-60 grid place-items-center bg-gray-900/60 p-4"
       onClick={onClose}
     >
-      <div
-        className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl"
+      <section
+        aria-label={`Preview ${file.name}`}
+        aria-modal="true"
+        className="flex max-h-[92vh] w-full max-w-250 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
       >
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="truncate text-sm font-medium">{file.name}</span>
-          <div className="flex items-center gap-3">
+        <header className="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-3">
+          <span className="inline-flex max-w-90 items-center gap-3 overflow-hidden text-left text-gray-700">
+            <FileTypeIcon mimeType={file.mimeType} size={19} />
+            <span className="truncate">{file.name}</span>
+          </span>
+          <div className="flex items-center gap-2">
             <a
-              className="text-sm text-blue-500 hover:underline"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100"
               download
               href={`/api/files/${file.id}/download`}
             >
-              ⬇️ Download
+              <ArrowDownToLine size={17} /> Download
             </a>
             <button
-              className="text-gray-500 hover:text-gray-800"
+              aria-label="Close preview"
+              className="grid size-9.5 place-items-center rounded-full text-gray-500 transition hover:bg-gray-100"
               onClick={onClose}
             >
-              ✕
+              <X size={19} />
             </button>
           </div>
-        </div>
-        <div className="flex flex-1 items-center justify-center overflow-auto p-4">
+        </header>
+        <div className="grid min-h-75 flex-1 place-items-center overflow-auto p-4">
           {isImage && (
             <img
               alt={file.name}
@@ -76,22 +84,17 @@ export default function FilePreview({ file, onClose }: Props) {
           )}
           {isText && <TextPreview src={src} />}
           {!isImage && !isVideo && !isAudio && !isPdf && !isText && (
-            <div className="text-center text-gray-500">
-              <p className="mb-3 text-4xl">{getFileIcon(file.mimeType)}</p>
-              <p className="mb-4 text-sm">
-                No preview available for this file type.
-              </p>
-              <a
-                className="rounded bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600"
-                download
-                href={`/api/files/${file.id}/download`}
-              >
-                Download
-              </a>
+            <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
+              <div>
+                <div className="mx-auto mb-4 grid size-19 place-items-center rounded-full bg-gray-100 text-gray-500">
+                  <FileTypeIcon mimeType={file.mimeType} size={34} />
+                </div>
+                <p>No preview available for this file type.</p>
+              </div>
             </div>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -106,9 +109,5 @@ function TextPreview({ src }: { src: string }) {
       .catch(() => setText("Failed to load file."));
   }, [src]);
 
-  return (
-    <pre className="max-h-[75vh] w-full overflow-auto rounded bg-gray-50 p-4 text-sm break-words whitespace-pre-wrap">
-      {text ?? "Loading…"}
-    </pre>
-  );
+  return <pre>{text ?? "Loading preview…"}</pre>;
 }

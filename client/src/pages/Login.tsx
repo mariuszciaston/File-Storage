@@ -57,46 +57,76 @@ export default function Login() {
     <Wrapper>
       <Header />
       <Main>
-        <div className="bg-cyan-100" id="card">
-          <form onSubmit={handleSubmit}>
-            {error && <div className="mb-4 text-red-600">{error}</div>}
+        <div className="grid place-items-center py-12">
+          <section className="w-full max-w-120 rounded-3xl border border-gray-200 bg-white p-6 sm:p-10">
+            <h1 className="m-0 mb-7 text-[1.8rem] font-normal tracking-[-0.04em]">
+              Welcome back
+            </h1>
 
-            <div>
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                name="username"
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                required
-                type="text"
-                value={formData.username}
-              />
-            </div>
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div
+                  className="mb-4 rounded-[0.65rem] bg-red-100 px-4 py-3 text-[0.85rem] text-red-700"
+                  role="alert"
+                >
+                  {error}
+                </div>
+              )}
 
-            <div>
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                name="password"
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-                type="password"
-                value={formData.password}
-              />
-            </div>
+              <label
+                className="mb-4 grid gap-2 text-sm font-medium text-gray-700"
+                htmlFor="username"
+              >
+                Username
+                <input
+                  autoComplete="username"
+                  className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
+                  id="username"
+                  name="username"
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  required
+                  type="text"
+                  value={formData.username}
+                />
+              </label>
 
-            <button disabled={loading} type="submit">
-              {loading ? "Logging in..." : "Login"}
-            </button>
-          </form>
+              <label
+                className="mb-4 grid gap-2 text-sm font-medium text-gray-700"
+                htmlFor="password"
+              >
+                Password
+                <input
+                  autoComplete="current-password"
+                  className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
+                  id="password"
+                  name="password"
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  type="password"
+                  value={formData.password}
+                />
+              </label>
 
-          <p>
-            Don't have an account? <Link to="/register">Register here</Link>
-          </p>
+              <button
+                className="mt-2 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-600"
+                disabled={loading}
+                type="submit"
+              >
+                {loading ? "Logging In…" : "Login"}
+              </button>
+            </form>
+
+            <p className="mt-6 text-sm text-gray-500">
+              Don't have an account?{" "}
+              <Link className="font-semibold text-green-600" to="/register">
+                Register here
+              </Link>
+            </p>
+          </section>
         </div>
       </Main>
       <Footer />
