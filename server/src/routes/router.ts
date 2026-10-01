@@ -16,6 +16,7 @@ import {
 	createFolder,
 	deleteFolder,
 	downloadFolder,
+	getFolderPath,
 	getFolders,
 	moveFolder,
 	renameFolder,
@@ -48,6 +49,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
 });
 
 router.get('/folders', requireAuth, getFolders);
+router.get('/folders/:id/path', requireAuth, getFolderPath);
 router.post('/folders', requireAuth, validateName, validation, createFolder);
 router.patch('/folders/:id/star', requireAuth, toggleFolderStar);
 router.patch('/folders/:id/move', requireAuth, moveFolder);

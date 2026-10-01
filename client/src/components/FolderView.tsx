@@ -26,6 +26,10 @@ import { FileTypeIcon } from "./FileIcons";
 import FilePreview from "./FilePreview";
 import FolderSidebar from "./FolderSidebar";
 
+interface FolderBreadcrumb {
+  id: number;
+  name: string;
+}
 interface SearchResponse {
   query: string;
   results: SearchResults;
@@ -59,11 +63,19 @@ const fileIconColorClass = (mimeType: string) =>
           ? "text-red-600"
           : "text-gray-500";
 
-export default function FolderView({ searchQuery }: { searchQuery: string }) {
+export default function FolderView({
+  onSearchChange,
+  searchQuery,
+}: {
+  onSearchChange: (query: string) => void;
+  searchQuery: string;
+}) {
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [currentFolder, setCurrentFolder] = useState<FolderType | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = useState<FolderType[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<FolderBreadcrumb | null>(
+    null,
+  );
+  const [breadcrumbs, setBreadcrumbs] = useState<FolderBreadcrumb[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderError, setNewFolderError] = useState("");
@@ -278,8 +290,21 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
     setCurrentFolder(path.at(-1) ?? null);
   }
 
-  function openFolder(folder: FolderType) {
-    setBreadcrumbs((previous) => [...previous, folder]);
+  async function openFolder(folder: FolderType) {
+    if (searchQuery.trim()) {
+      let path: FolderBreadcrumb[] = [folder];
+      try {
+        const response = await fetch(`/api/folders/${folder.id}/path`);
+        if (response.ok) path = (await response.json()) as FolderBreadcrumb[];
+      } catch {
+        // Keep the selected folder usable even if its breadcrumb path fails.
+      }
+      setBreadcrumbs(path);
+      setSearchResults(null);
+      onSearchChange("");
+    } else {
+      setBreadcrumbs((previous) => [...previous, folder]);
+    }
     setCurrentFolder(folder);
   }
 
@@ -507,32 +532,40 @@ export default function FolderView({ searchQuery }: { searchQuery: string }) {
             aria-label="Breadcrumb"
             className="flex min-w-0 flex-wrap items-center gap-1 text-gray-500"
           >
-            <button
-              className={`-ml-2 max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${breadcrumbs.length === 0 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === "root" ? "outline-2 outline-blue-600" : ""}`}
-              onClick={() => navigateTo(-1)}
-              onDragLeave={() => setDragOver(null)}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setDragOver("root");
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                void handleDrop(null);
-              }}
-            >
-              My Drive
-            </button>
-            {breadcrumbs.map((breadcrumb, index) => (
-              <span className="flex items-center gap-1" key={breadcrumb.id}>
-                <ChevronRight aria-hidden="true" size={16} />
-                <button
-                  className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""}`}
-                  onClick={() => navigateTo(index)}
-                >
-                  {breadcrumb.name}
-                </button>
+            {searchQuery.trim() ? (
+              <span className="-ml-2 px-2 py-1 text-xl font-medium text-gray-900">
+                Search results
               </span>
-            ))}
+            ) : (
+              <>
+                <button
+                  className={`-ml-2 max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${breadcrumbs.length === 0 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === "root" ? "outline-2 outline-blue-600" : ""}`}
+                  onClick={() => navigateTo(-1)}
+                  onDragLeave={() => setDragOver(null)}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragOver("root");
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    void handleDrop(null);
+                  }}
+                >
+                  My Drive
+                </button>
+                {breadcrumbs.map((breadcrumb, index) => (
+                  <span className="flex items-center gap-1" key={breadcrumb.id}>
+                    <ChevronRight aria-hidden="true" size={16} />
+                    <button
+                      className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""}`}
+                      onClick={() => navigateTo(index)}
+                    >
+                      {breadcrumb.name}
+                    </button>
+                  </span>
+                ))}
+              </>
+            )}
           </nav>
           <div
             aria-label="View mode"

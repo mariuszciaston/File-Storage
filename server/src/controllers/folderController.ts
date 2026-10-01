@@ -25,6 +25,37 @@ export const getFolders = async (
 	}
 };
 
+export const getFolderPath = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const userId = (req.user as UserModel).id;
+		const folderId = Number(req.params.id);
+		const folders = await prisma.folder.findMany({
+			select: { id: true, name: true, parentId: true },
+			where: { ownerId: userId },
+		});
+		const foldersById = new Map(folders.map((folder) => [folder.id, folder]));
+		let folder = foldersById.get(folderId);
+		if (!folder) return res.status(404).json({ error: 'Folder not found' });
+
+		const path: { id: number; name: string }[] = [];
+		const visited = new Set<number>();
+		while (folder && !visited.has(folder.id)) {
+			visited.add(folder.id);
+			path.push({ id: folder.id, name: folder.name });
+			folder =
+				folder.parentId === null ? undefined : foldersById.get(folder.parentId);
+		}
+
+		res.json(path.reverse());
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const createFolder = async (
 	req: Request,
 	res: Response,

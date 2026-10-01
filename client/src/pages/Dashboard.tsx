@@ -15,7 +15,7 @@ export default function Dashboard() {
     <Wrapper>
       <Header onSearchChange={setSearchQuery} searchQuery={searchQuery} />
       <Main>
-        <FolderView searchQuery={searchQuery} />
+        <FolderView onSearchChange={setSearchQuery} searchQuery={searchQuery} />
       </Main>
       <Footer />
     </Wrapper>
