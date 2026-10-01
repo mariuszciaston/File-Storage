@@ -1,6 +1,5 @@
 import {
   ArrowDownToLine,
-  Check,
   ChevronRight,
   FilePlus2,
   Folder,
@@ -11,7 +10,6 @@ import {
   Search,
   Star,
   Trash2,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -30,6 +28,10 @@ interface FolderBreadcrumb {
   id: number;
   name: string;
 }
+type ModalAction =
+  | { item: DragItem; kind: "delete"; name: string }
+  | { item: DragItem; kind: "rename"; name: string }
+  | { kind: "new-folder" };
 interface SearchResponse {
   query: string;
   results: SearchResults;
@@ -76,12 +78,10 @@ export default function FolderView({
     null,
   );
   const [breadcrumbs, setBreadcrumbs] = useState<FolderBreadcrumb[]>([]);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
-  const [newFolderError, setNewFolderError] = useState("");
-  const [renamingItem, setRenamingItem] = useState<DragItem | null>(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [renameError, setRenameError] = useState("");
+  const [modalAction, setModalAction] = useState<ModalAction | null>(null);
+  const [modalValue, setModalValue] = useState("");
+  const [modalError, setModalError] = useState("");
+  const [modalPending, setModalPending] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [showStarred, setShowStarred] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
@@ -183,60 +183,76 @@ export default function FolderView({
   const isSearchPending = Boolean(searchQuery.trim() && !activeSearchResults);
   const hasItems = visibleFolders.length + visibleFiles.length > 0;
 
-  async function createFolder() {
-    if (!newFolderName.trim()) {
-      setNewFolderError("Folder name cannot be empty");
+  function openNewFolderModal() {
+    setModalAction({ kind: "new-folder" });
+    setModalValue("");
+    setModalError("");
+  }
+
+  function openRenameModal(item: DragItem, name: string) {
+    setModalAction({ item, kind: "rename", name });
+    setModalValue(name);
+    setModalError("");
+  }
+
+  function openDeleteModal(item: DragItem, name: string) {
+    setModalAction({ item, kind: "delete", name });
+    setModalValue("");
+    setModalError("");
+  }
+
+  function closeActionModal() {
+    if (modalPending) return;
+    setModalAction(null);
+    setModalError("");
+  }
+
+  async function submitActionModal() {
+    if (!modalAction) return;
+    const needsName = modalAction.kind !== "delete";
+    const name = modalValue.trim();
+    if (needsName && !name) {
+      setModalError("Name cannot be empty");
       return;
     }
-    const response = await fetch("/api/folders", {
-      body: JSON.stringify({ name: newFolderName.trim(), parentId }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-    if (response.ok) {
-      setNewFolderName("");
-      setNewFolderError("");
-      setShowNewFolderModal(false);
-      await load();
+
+    let url = "/api/folders";
+    let method = "POST";
+    let body: string | undefined;
+    if (modalAction.kind === "new-folder") {
+      body = JSON.stringify({ name, parentId });
     } else {
-      const data = await response.json();
-      setNewFolderError(data.errors?.[0]?.msg ?? "Could not create folder");
+      const endpoint = modalAction.item.type === "folder" ? "folders" : "files";
+      url = `/api/${endpoint}/${modalAction.item.id}`;
+      method = modalAction.kind === "rename" ? "PATCH" : "DELETE";
+      if (modalAction.kind === "rename") body = JSON.stringify({ name });
     }
-  }
 
-  async function renameItem() {
-    if (!renamingItem || !renameValue.trim()) {
-      setRenameError("Name cannot be empty");
-      return;
-    }
-    const endpoint = renamingItem.type === "folder" ? "folders" : "files";
-    const response = await fetch(`/api/${endpoint}/${renamingItem.id}`, {
-      body: JSON.stringify({ name: renameValue.trim() }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-    });
-    if (response.ok) {
-      setRenamingItem(null);
-      setRenameError("");
+    setModalPending(true);
+    try {
+      const response = await fetch(url, {
+        ...(body
+          ? { body, headers: { "Content-Type": "application/json" } }
+          : {}),
+        method,
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        setModalError(
+          data.errors?.[0]?.msg ??
+            data.error ??
+            `Could not ${modalAction.kind === "new-folder" ? "create folder" : modalAction.kind === "rename" ? "rename item" : "delete item"}`,
+        );
+        return;
+      }
+      setModalAction(null);
+      setModalError("");
       await load();
-    } else {
-      const data = await response.json();
-      setRenameError(data.errors?.[0]?.msg ?? "Could not rename item");
+    } catch {
+      setModalError("The request failed. Please try again.");
+    } finally {
+      setModalPending(false);
     }
-  }
-
-  async function deleteFolder(folder: FolderType) {
-    if (!confirm(`Delete “${folder.name}” and all its contents?`)) return;
-    const response = await fetch(`/api/folders/${folder.id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) await load();
-  }
-
-  async function deleteFile(file: FileItem) {
-    if (!confirm(`Delete “${file.name}”?`)) return;
-    const response = await fetch(`/api/files/${file.id}`, { method: "DELETE" });
-    if (response.ok) await load();
   }
 
   async function toggleStar(
@@ -308,26 +324,17 @@ export default function FolderView({
     setCurrentFolder(folder);
   }
 
-  function beginRename(item: DragItem, name: string) {
-    setRenamingItem(item);
-    setRenameValue(name);
-    setRenameError("");
-  }
-
-  function clearRename() {
-    setRenamingItem(null);
-    setRenameError("");
-  }
-
   function renderFolderActions(folder: FolderType) {
     return (
       <ItemActions
         downloadUrl={`/api/folders/${folder.id}/download`}
         menuOpen={openMenuKey === `folder-${folder.id}`}
         onCloseMenu={() => setOpenMenuKey(null)}
-        onDelete={() => void deleteFolder(folder)}
+        onDelete={() =>
+          openDeleteModal({ id: folder.id, type: "folder" }, folder.name)
+        }
         onRename={() =>
-          beginRename({ id: folder.id, type: "folder" }, folder.name)
+          openRenameModal({ id: folder.id, type: "folder" }, folder.name)
         }
         onToggleMenu={() =>
           setOpenMenuKey((key) =>
@@ -346,8 +353,12 @@ export default function FolderView({
         downloadUrl={`/api/files/${file.id}/download`}
         menuOpen={openMenuKey === `file-${file.id}`}
         onCloseMenu={() => setOpenMenuKey(null)}
-        onDelete={() => void deleteFile(file)}
-        onRename={() => beginRename({ id: file.id, type: "file" }, file.name)}
+        onDelete={() =>
+          openDeleteModal({ id: file.id, type: "file" }, file.name)
+        }
+        onRename={() =>
+          openRenameModal({ id: file.id, type: "file" }, file.name)
+        }
         onToggleMenu={() =>
           setOpenMenuKey((key) =>
             key === `file-${file.id}` ? null : `file-${file.id}`,
@@ -360,16 +371,12 @@ export default function FolderView({
   }
 
   function renderFolder(folder: FolderType) {
-    const isRenaming =
-      renamingItem?.type === "folder" && renamingItem.id === folder.id;
     return (
       <article
-        className={`relative min-w-0 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${!isRenaming ? "cursor-pointer" : ""} ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+        className={`relative min-w-0 cursor-pointer overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
         draggable
         key={`folder-${folder.id}`}
-        onClick={() => {
-          if (!isRenaming) openFolder(folder);
-        }}
+        onClick={() => openFolder(folder)}
         onDragEnd={() => {
           dragItem.current = null;
           setDragOver(null);
@@ -387,48 +394,31 @@ export default function FolderView({
           void handleDrop(folder.id);
         }}
       >
-        {isRenaming ? (
-          <RenameField
-            error={renameError}
-            onCancel={clearRename}
-            onChange={(value) => {
-              setRenameValue(value);
-              setRenameError("");
-            }}
-            onSave={() => void renameItem()}
-            value={renameValue}
-          />
-        ) : (
-          <>
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className="grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl bg-blue-100 text-blue-500">
-                  <Folder size={22} />
-                </span>
-                <div className="min-w-0 flex-1 text-left">
-                  <button
-                    className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openFolder(folder);
-                    }}
-                    title={folder.name}
-                  >
-                    {folder.name}
-                  </button>
-                </div>
-              </div>
-              {renderFolderActions(folder)}
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl bg-blue-100 text-blue-500">
+              <Folder size={22} />
+            </span>
+            <div className="min-w-0 flex-1 text-left">
+              <button
+                className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openFolder(folder);
+                }}
+                title={folder.name}
+              >
+                {folder.name}
+              </button>
             </div>
-          </>
-        )}
+          </div>
+          {renderFolderActions(folder)}
+        </div>
       </article>
     );
   }
 
   function renderFile(file: FileItem) {
-    const isRenaming =
-      renamingItem?.type === "file" && renamingItem.id === file.id;
     const iconTone = file.mimeType.startsWith("image/")
       ? "image"
       : file.mimeType.startsWith("video/")
@@ -440,12 +430,10 @@ export default function FolderView({
             : "";
     return (
       <article
-        className={`relative flex h-full min-w-0 flex-col gap-2 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${!isRenaming ? "cursor-pointer" : ""}`}
+        className="relative flex h-full min-w-0 cursor-pointer flex-col gap-2 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600"
         draggable
         key={`file-${file.id}`}
-        onClick={() => {
-          if (!isRenaming) setPreviewFile(file);
-        }}
+        onClick={() => setPreviewFile(file)}
         onDragEnd={() => {
           dragItem.current = null;
           setDragOver(null);
@@ -454,64 +442,51 @@ export default function FolderView({
           dragItem.current = { id: file.id, type: "file" };
         }}
       >
-        {isRenaming ? (
-          <RenameField
-            error={renameError}
-            onCancel={clearRename}
-            onChange={(value) => {
-              setRenameValue(value);
-              setRenameError("");
-            }}
-            onSave={() => void renameItem()}
-            value={renameValue}
-          />
-        ) : (
-          <>
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span
-                  className={`grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl ${iconTone === "image" ? "bg-green-100 text-green-700" : iconTone === "pdf" ? "bg-red-100 text-red-600" : iconTone === "audio" ? "bg-purple-100 text-purple-600" : iconTone === "video" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}
-                >
-                  <FileTypeIcon mimeType={file.mimeType} size={21} />
-                </span>
-                <div className="min-w-0 flex-1 text-left">
-                  <button
-                    className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setPreviewFile(file);
-                    }}
-                    title={file.name}
-                  >
-                    {file.name}
-                  </button>
-                </div>
-              </div>
-              {renderFileActions(file)}
-            </div>
-            {file.mimeType.startsWith("image/") ? (
-              <button
-                aria-label={`Preview ${file.name}`}
-                className="block h-27.5 w-full cursor-pointer rounded-[0.6rem] border border-gray-200 bg-white p-0"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setPreviewFile(file);
-                }}
+        <>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span
+                className={`grid size-10.5 shrink-0 cursor-pointer place-items-center rounded-xl ${iconTone === "image" ? "bg-green-100 text-green-700" : iconTone === "pdf" ? "bg-red-100 text-red-600" : iconTone === "audio" ? "bg-purple-100 text-purple-600" : iconTone === "video" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}
               >
-                <img
-                  alt=""
-                  className="h-full w-full rounded-[0.6rem] object-contain"
-                  loading="lazy"
-                  src={`/api/files/${file.id}/preview`}
-                />
-              </button>
-            ) : (
-              <div className="grid h-27.5 w-full place-items-center rounded-[0.6rem] border border-gray-200 bg-white text-gray-500">
-                <FileTypeIcon mimeType={file.mimeType} size={32} />
+                <FileTypeIcon mimeType={file.mimeType} size={21} />
+              </span>
+              <div className="min-w-0 flex-1 text-left">
+                <button
+                  className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPreviewFile(file);
+                  }}
+                  title={file.name}
+                >
+                  {file.name}
+                </button>
               </div>
-            )}
-          </>
-        )}
+            </div>
+            {renderFileActions(file)}
+          </div>
+          {file.mimeType.startsWith("image/") ? (
+            <button
+              aria-label={`Preview ${file.name}`}
+              className="block h-27.5 w-full cursor-pointer rounded-[0.6rem] border border-gray-200 bg-white p-0"
+              onClick={(event) => {
+                event.stopPropagation();
+                setPreviewFile(file);
+              }}
+            >
+              <img
+                alt=""
+                className="h-full w-full rounded-[0.6rem] object-contain"
+                loading="lazy"
+                src={`/api/files/${file.id}/preview`}
+              />
+            </button>
+          ) : (
+            <div className="grid h-27.5 w-full place-items-center rounded-[0.6rem] border border-gray-200 bg-white text-gray-500">
+              <FileTypeIcon mimeType={file.mimeType} size={32} />
+            </div>
+          )}
+        </>
       </article>
     );
   }
@@ -520,7 +495,7 @@ export default function FolderView({
     <section className="grid flex-1 grid-cols-1 grid-rows-[auto_minmax(540px,1fr)] items-stretch gap-6 sm:grid-cols-[240px_minmax(0,1fr)] sm:grid-rows-1">
       <FolderSidebar
         folderId={parentId ?? undefined}
-        onNewFolder={() => setShowNewFolderModal(true)}
+        onNewFolder={openNewFolderModal}
         onShowStarredChange={setShowStarred}
         onUploaded={() => void load()}
         showStarred={showStarred}
@@ -658,14 +633,7 @@ export default function FolderView({
                     className={`cursor-pointer transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
                     draggable
                     key={`row-folder-${folder.id}`}
-                    onClick={() => {
-                      if (
-                        renamingItem?.type !== "folder" ||
-                        renamingItem.id !== folder.id
-                      ) {
-                        openFolder(folder);
-                      }
-                    }}
+                    onClick={() => openFolder(folder)}
                     onDragEnd={() => {
                       dragItem.current = null;
                       setDragOver(null);
@@ -684,32 +652,18 @@ export default function FolderView({
                     }}
                   >
                     <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
-                      {renamingItem?.type === "folder" &&
-                      renamingItem.id === folder.id ? (
-                        <RenameField
-                          error={renameError}
-                          onCancel={clearRename}
-                          onChange={(value) => {
-                            setRenameValue(value);
-                            setRenameError("");
-                          }}
-                          onSave={() => void renameItem()}
-                          value={renameValue}
-                        />
-                      ) : (
-                        <button
-                          className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openFolder(folder);
-                          }}
-                        >
-                          <Folder className="text-blue-500" size={19} />
-                          <span className="overflow-hidden text-ellipsis">
-                            {folder.name}
-                          </span>
-                        </button>
-                      )}
+                      <button
+                        className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openFolder(folder);
+                        }}
+                      >
+                        <Folder className="text-blue-500" size={19} />
+                        <span className="overflow-hidden text-ellipsis">
+                          {folder.name}
+                        </span>
+                      </button>
                     </td>
                     <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                       —
@@ -728,14 +682,7 @@ export default function FolderView({
                       className="cursor-pointer transition-colors hover:outline-2 hover:outline-blue-600"
                       draggable
                       key={`row-file-${file.id}`}
-                      onClick={() => {
-                        if (
-                          renamingItem?.type !== "file" ||
-                          renamingItem.id !== file.id
-                        ) {
-                          setPreviewFile(file);
-                        }
-                      }}
+                      onClick={() => setPreviewFile(file)}
                       onDragEnd={() => {
                         dragItem.current = null;
                         setDragOver(null);
@@ -745,34 +692,17 @@ export default function FolderView({
                       }}
                     >
                       <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
-                        {renamingItem?.type === "file" &&
-                        renamingItem.id === file.id ? (
-                          <RenameField
-                            error={renameError}
-                            onCancel={clearRename}
-                            onChange={(value) => {
-                              setRenameValue(value);
-                              setRenameError("");
-                            }}
-                            onSave={() => void renameItem()}
-                            value={renameValue}
-                          />
-                        ) : (
-                          <button
-                            className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
-                            onClick={() => setPreviewFile(file)}
-                          >
-                            <span className={fileIconColorClass(file.mimeType)}>
-                              <FileTypeIcon
-                                mimeType={file.mimeType}
-                                size={19}
-                              />
-                            </span>
-                            <span className="overflow-hidden text-ellipsis">
-                              {file.name}
-                            </span>
-                          </button>
-                        )}
+                        <button
+                          className="inline-flex max-w-90 cursor-pointer items-center gap-3 overflow-hidden text-left text-gray-700"
+                          onClick={() => setPreviewFile(file)}
+                        >
+                          <span className={fileIconColorClass(file.mimeType)}>
+                            <FileTypeIcon mimeType={file.mimeType} size={19} />
+                          </span>
+                          <span className="overflow-hidden text-ellipsis">
+                            {file.name}
+                          </span>
+                        </button>
                       </td>
                       <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                         {sizeLabel(file.size)}
@@ -811,63 +741,91 @@ export default function FolderView({
       {previewFile && (
         <FilePreview file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
-      {showNewFolderModal && (
+      {modalAction && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-gray-900/40 p-4 backdrop-blur-sm"
-          onClick={() => {
-            setShowNewFolderModal(false);
-            setNewFolderError("");
-          }}
+          onClick={closeActionModal}
         >
           <section
-            aria-labelledby="new-folder-title"
+            aria-labelledby="action-modal-title"
             aria-modal="true"
             className="w-full max-w-110 rounded-3xl border border-gray-200 bg-white p-6"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
           >
-            <h2 className="mb-5 text-xl font-medium" id="new-folder-title">
-              Create a folder
+            <h2 className="mb-5 text-xl font-medium" id="action-modal-title">
+              {modalAction.kind === "new-folder"
+                ? "Create a folder"
+                : modalAction.kind === "rename"
+                  ? `Rename ${modalAction.item.type}`
+                  : `Delete ${modalAction.item.type}?`}
             </h2>
-            <label
-              className="mb-4 grid gap-2 text-sm font-medium text-gray-700"
-              htmlFor="new-folder-name"
-            >
-              Folder name
-              <input
-                autoFocus
-                className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
-                id="new-folder-name"
-                onChange={(event) => {
-                  setNewFolderName(event.target.value);
-                  setNewFolderError("");
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void createFolder();
-                  if (event.key === "Escape") setShowNewFolderModal(false);
-                }}
-                placeholder="For example, Projects"
-                value={newFolderName}
-              />
-            </label>
-            {newFolderError && (
-              <p className="text-xs text-red-700">{newFolderError}</p>
+            {modalAction.kind === "delete" ? (
+              <p className="text-sm text-gray-600">
+                Delete “{modalAction.name}”
+                {modalAction.item.type === "folder" && " and all its contents"}?
+                This action cannot be undone.
+              </p>
+            ) : (
+              <label
+                className="grid gap-2 text-sm font-medium text-gray-700"
+                htmlFor="action-modal-name"
+              >
+                {modalAction.kind === "new-folder" ? "Folder name" : "New name"}
+                <input
+                  autoFocus
+                  className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
+                  id="action-modal-name"
+                  onChange={(event) => {
+                    setModalValue(event.target.value);
+                    setModalError("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !modalPending) {
+                      void submitActionModal();
+                    }
+                    if (event.key === "Escape" && !modalPending) {
+                      closeActionModal();
+                    }
+                  }}
+                  placeholder={
+                    modalAction.kind === "new-folder"
+                      ? "For example, Projects"
+                      : undefined
+                  }
+                  value={modalValue}
+                />
+              </label>
+            )}
+            {modalError && (
+              <p className="mt-3 text-xs text-red-700" role="alert">
+                {modalError}
+              </p>
             )}
             <div className="mt-6 flex justify-end gap-2">
               <button
                 className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100"
-                onClick={() => {
-                  setShowNewFolderModal(false);
-                  setNewFolderError("");
-                }}
+                disabled={modalPending}
+                onClick={closeActionModal}
               >
                 Cancel
               </button>
               <button
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
-                onClick={() => void createFolder()}
+                className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 ${modalAction.kind === "delete" ? "bg-red-600" : "bg-blue-500"}`}
+                disabled={modalPending}
+                onClick={() => void submitActionModal()}
               >
-                Create
+                {modalPending
+                  ? modalAction.kind === "delete"
+                    ? "Deleting…"
+                    : modalAction.kind === "rename"
+                      ? "Saving…"
+                      : "Creating…"
+                  : modalAction.kind === "delete"
+                    ? "Delete"
+                    : modalAction.kind === "rename"
+                      ? "Save"
+                      : "Create"}
               </button>
             </div>
           </section>
@@ -972,55 +930,6 @@ function ItemActions({
             <Trash2 size={16} /> Delete
           </button>
         </div>
-      )}
-    </div>
-  );
-}
-
-function RenameField({
-  error,
-  onCancel,
-  onChange,
-  onSave,
-  value,
-}: {
-  error: string;
-  onCancel: () => void;
-  onChange: (value: string) => void;
-  onSave: () => void;
-  value: string;
-}) {
-  return (
-    <div className="relative flex min-w-0 items-center gap-px">
-      <input
-        aria-label="New name"
-        autoFocus
-        className="h-9 w-full min-w-0 rounded-md border border-gray-300 px-2 outline-blue-600"
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") onSave();
-          if (event.key === "Escape") onCancel();
-        }}
-        value={value}
-      />
-      <button
-        aria-label="Save name"
-        className="grid size-8 shrink-0 place-items-center rounded-full text-gray-500 hover:bg-gray-100"
-        onClick={onSave}
-      >
-        <Check size={17} />
-      </button>
-      <button
-        aria-label="Cancel rename"
-        className="grid size-8 shrink-0 place-items-center rounded-full text-gray-500 hover:bg-gray-100"
-        onClick={onCancel}
-      >
-        <X size={17} />
-      </button>
-      {error && (
-        <span className="absolute bottom-0 left-3 text-xs text-red-700">
-          {error}
-        </span>
       )}
     </div>
   );
