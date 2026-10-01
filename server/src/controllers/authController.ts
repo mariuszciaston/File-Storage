@@ -11,19 +11,12 @@ export const register = async (
 	next: NextFunction,
 ) => {
 	try {
-		const { fullname, password, passwordConfirmation, username } =
-			req.body as Pick<UserModel, 'fullname' | 'password' | 'username'> & {
-				passwordConfirmation: string;
-			};
-
-		if (password !== passwordConfirmation) {
-			return res.status(400).json({ error: 'Passwords do not match' });
-		}
-
-		const existingUser = await prisma.user.findUnique({ where: { username } });
-		if (existingUser) {
-			return res.status(400).json({ error: 'Username already exists' });
-		}
+		const { fullname, password, username } = req.body as Pick<
+			UserModel,
+			'fullname' | 'password' | 'username'
+		> & {
+			passwordConfirmation: string;
+		};
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const user = await prisma.user.create({
@@ -68,3 +61,10 @@ export const login = [
 		)(req, res, next);
 	},
 ];
+
+export const logout = (req: Request, res: Response) => {
+	req.logout((err) => {
+		if (err) return res.status(500).json({ error: 'Logout failed' });
+		res.json({ message: 'Logged out successfully' });
+	});
+};

@@ -46,7 +46,7 @@ export default function Register() {
         navigate("/login");
       } else {
         const data = await response.json();
-        setError(data.error || "Registration failed");
+        setError(data.error || data.errors?.[0]?.msg || "Registration failed");
       }
     } catch {
       setError("Network error. Please try again.");

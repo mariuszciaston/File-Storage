@@ -1,9 +1,64 @@
 import { Request } from 'express';
 import { body } from 'express-validator';
 
+import { prisma } from '../lib/prisma.js';
+
 const FORBIDDEN_CHARS = /[<>:"/\\|?*]/;
 
-export const nameValidator = [
+export const validateRegister = [
+	body('fullname')
+		.trim()
+		.isAlpha('pl-PL', { ignore: ' ' })
+		.withMessage('Full name must only contain letters')
+		.isLength({ max: 20, min: 1 })
+		.withMessage('Full name must be between 1 and 20 characters'),
+	body('username')
+		.trim()
+		.isAlphanumeric()
+		.withMessage('Username must only contain letters and numbers')
+		.isLength({ max: 15, min: 3 })
+		.withMessage('Username must be between 3 and 15 characters')
+		.bail()
+		.custom(async (username: string) => {
+			const existingUser = await prisma.user.findUnique({
+				where: { username },
+			});
+			if (existingUser) {
+				throw new Error('Username already exists');
+			}
+			return true;
+		}),
+	body('password')
+		.isLength({ max: 20, min: 8 })
+		.withMessage('Password must be between 8 and 20 characters')
+		.matches(/[a-z]/)
+		.withMessage('Password must contain at least one lowercase letter')
+		.matches(/[A-Z]/)
+		.withMessage('Password must contain at least one uppercase letter')
+		.matches(/[0-9]/)
+		.withMessage('Password must contain at least one number')
+		.matches(/[@$!%*?&]/)
+		.withMessage(
+			'Password must contain at least one special character (@, $, !, %, *, ?, &)',
+		),
+	body('passwordConfirmation')
+		.notEmpty()
+		.withMessage('Password confirmation is required')
+		.custom((passwordConfirmation, { req }) => {
+			const { password } = req.body as { password: string };
+			if (passwordConfirmation !== password) {
+				throw new Error('Password confirmation does not match password');
+			}
+			return true;
+		}),
+];
+
+export const validateLogin = [
+	body('username').notEmpty().withMessage('Username is required'),
+	body('password').notEmpty().withMessage('Password is required'),
+];
+
+export const validateName = [
 	body('name')
 		.trim()
 		.notEmpty()
@@ -37,7 +92,7 @@ const ALLOWED_MIME_TYPES = new Set([
 	'text/plain',
 ]);
 
-export const fileUploadValidator = body('file').custom((_value, { req }) => {
+export const validateFileUpload = body('file').custom((_value, { req }) => {
 	const { file } = req as Request;
 	if (!file) {
 		throw new Error('File is required');
