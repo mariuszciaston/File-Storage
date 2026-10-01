@@ -7,7 +7,14 @@ interface AuthRedirectProps {
 import { useAuth } from "../hooks/useAuth";
 
 export default function AuthRedirect({ children }: AuthRedirectProps) {
-  const { user } = useAuth();
+  const {
+    // loading,
+    user,
+  } = useAuth();
+
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
 
   if (user) {
     return <Navigate replace to="/dashboard" />;
