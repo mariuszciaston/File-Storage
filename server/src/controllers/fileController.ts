@@ -37,7 +37,20 @@ export const downloadFile = async (
 			where: { id, ownerId: userId },
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
-		res.redirect(file.secureUrl);
+
+		const upstream = await fetch(file.secureUrl);
+
+		if (!upstream.ok) {
+			return res.status(502).json({ error: 'Could not retrieve file' });
+		}
+
+		const buffer = Buffer.from(await upstream.arrayBuffer());
+
+		res.attachment(file.name);
+		res.type(file.mimeType);
+		res.setHeader('Content-Length', buffer.length);
+
+		res.send(buffer);
 	} catch (error) {
 		next(error);
 	}
