@@ -567,7 +567,7 @@ export default function FolderView({
 
         {isSearchPending ? (
           <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
-            <p className="text-sm">Searching…</p>
+            <p className="text-sm">Searching...</p>
           </div>
         ) : searchQuery.trim() && activeSearchResults && !hasItems ? (
           <div className="grid min-h-85 place-items-center p-8 text-center text-gray-500">
@@ -788,11 +788,6 @@ export default function FolderView({
                       closeActionModal();
                     }
                   }}
-                  placeholder={
-                    modalAction.kind === "new-folder"
-                      ? "For example, Projects"
-                      : undefined
-                  }
                   value={modalValue}
                 />
               </label>

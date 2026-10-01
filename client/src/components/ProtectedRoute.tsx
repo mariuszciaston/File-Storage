@@ -7,11 +7,7 @@ interface ProtectedRouteProps {
 import { useAuth } from "../hooks/useAuth";
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { loading, user } = useAuth();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const { user } = useAuth();
 
   if (!user) {
     return <Navigate replace to="/" />;
