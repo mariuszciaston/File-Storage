@@ -159,27 +159,45 @@ export default function FolderView({
     if (sortKey === key) setSortAsc((ascending) => !ascending);
     else {
       setSortKey(key);
-      setSortAsc(true);
+      setSortAsc(key !== "updatedAt");
     }
   }
 
-  const sortedFolders = [...folders]
-    .filter((folder) => !showStarred || folder.starred)
-    .sort((a, b) => a.name.localeCompare(b.name) * (sortAsc ? 1 : -1));
-  const sortedFiles = [...files]
-    .filter((file) => !showStarred || file.starred)
-    .sort((a, b) => {
-      const direction = sortAsc ? 1 : -1;
-      if (sortKey === "size") return (a.size - b.size) * direction;
-      if (sortKey === "updatedAt") {
-        return (Date.parse(a.updatedAt) - Date.parse(b.updatedAt)) * direction;
-      }
-      return a.name.localeCompare(b.name) * direction;
-    });
   const activeSearchResults =
     searchResults?.query === searchQuery.trim() ? searchResults.results : null;
-  const visibleFolders = activeSearchResults?.folders ?? sortedFolders;
-  const visibleFiles = activeSearchResults?.files ?? sortedFiles;
+  const direction = sortAsc ? 1 : -1;
+  const compareUpdatedAt = (
+    a: { name: string; updatedAt: string },
+    b: { name: string; updatedAt: string },
+  ) => {
+    const dateDifference = Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
+    return (
+      (Number.isNaN(dateDifference) ? 0 : dateDifference) ||
+      a.name.localeCompare(b.name)
+    );
+  };
+  const sortedFolders = [...(activeSearchResults?.folders ?? folders)]
+    .filter((folder) => activeSearchResults || !showStarred || folder.starred)
+    .sort((a, b) => {
+      const comparison =
+        sortKey === "updatedAt"
+          ? compareUpdatedAt(a, b)
+          : a.name.localeCompare(b.name);
+      return comparison * direction;
+    });
+  const sortedFiles = [...(activeSearchResults?.files ?? files)]
+    .filter((file) => activeSearchResults || !showStarred || file.starred)
+    .sort((a, b) => {
+      const comparison =
+        sortKey === "size"
+          ? a.size - b.size
+          : sortKey === "updatedAt"
+            ? compareUpdatedAt(a, b)
+            : a.name.localeCompare(b.name);
+      return comparison * direction;
+    });
+  const visibleFolders = sortedFolders;
+  const visibleFiles = sortedFiles;
   const isSearchPending = Boolean(searchQuery.trim() && !activeSearchResults);
   const hasItems = visibleFolders.length + visibleFiles.length > 0;
 
