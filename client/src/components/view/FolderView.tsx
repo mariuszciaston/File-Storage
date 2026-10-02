@@ -18,11 +18,11 @@ interface DragItem {
   type: "file" | "folder";
 }
 
-import type { FileItem, Folder as FolderType } from "../types/types";
+import type { FileItem, Folder as FolderType } from "../../types/types";
 
-import { FileTypeIcon } from "./FileIcons";
+import { FileTypeIcon } from "../common/FileIcons";
+import ModalDialog from "../common/ModalDialog";
 import FilePreview from "./FilePreview";
-import ModalDialog from "./ModalDialog";
 
 interface FolderBreadcrumb {
   id: number;

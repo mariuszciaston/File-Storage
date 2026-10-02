@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-import FolderSidebar from "../components/FolderSidebar";
-import FolderView from "../components/FolderView";
 import Footer from "../components/layouts/Footer";
 import Header from "../components/layouts/Header";
 import Main from "../components/layouts/Main";
 import Wrapper from "../components/layouts/Wrapper";
+import FolderSidebar from "../components/sidebar/FolderSidebar";
+import FolderView from "../components/view/FolderView";
 import { useTitle } from "../hooks/useTitle";
 
 export default function Dashboard() {

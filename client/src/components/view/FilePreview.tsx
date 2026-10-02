@@ -1,9 +1,9 @@
 import { ArrowDownToLine, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import type { FileItem } from "../types/types";
+import type { FileItem } from "../../types/types";
 
-import { FileTypeIcon } from "./FileIcons";
+import { FileTypeIcon } from "../common/FileIcons";
 
 interface Props {
   file: FileItem;

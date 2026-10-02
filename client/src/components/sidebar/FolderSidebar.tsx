@@ -1,8 +1,8 @@
 import { Folder, FolderPlus, Star } from "lucide-react";
 import { useState } from "react";
 
+import ModalDialog from "../common/ModalDialog";
 import FileUploader from "./FileUploader";
-import ModalDialog from "./ModalDialog";
 
 interface FolderSidebarProps {
   folderId?: number;
