@@ -207,7 +207,9 @@ export const deleteFile = async (
 		});
 		if (!file) return res.status(404).json({ error: 'File not found' });
 
-		await deleteFromCloudinary(file, userId);
+		if (file.publicId.startsWith(`file-storage/${userId}/`)) {
+			await deleteFromCloudinary(file, userId);
+		}
 		await prisma.file.delete({ where: { id } });
 
 		res.json({ message: 'File deleted' });
