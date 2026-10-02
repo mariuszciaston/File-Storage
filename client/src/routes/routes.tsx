@@ -1,5 +1,5 @@
-import AuthRedirect from "../components/AuthRedirect";
-import ProtectedRoute from "../components/ProtectedRoute";
+import AuthRedirect from "../components/auth/AuthRedirect";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
 import Dashboard from "../pages/Dashboard";
 import Home from "../pages/Home";
 import Login from "../pages/Login";

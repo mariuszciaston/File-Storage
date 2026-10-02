@@ -2,7 +2,7 @@ import { Box, Search, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
 const isDev = import.meta.env.NODE_ENV !== "production";
 const serverPort = isDev

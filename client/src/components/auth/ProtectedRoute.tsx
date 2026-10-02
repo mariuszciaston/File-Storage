@@ -1,12 +1,12 @@
 import { Navigate } from "react-router-dom";
 
-interface AuthRedirectProps {
+interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
-export default function AuthRedirect({ children }: AuthRedirectProps) {
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const {
     // loading,
     user,
@@ -16,8 +16,8 @@ export default function AuthRedirect({ children }: AuthRedirectProps) {
   //   return <div>Loading...</div>;
   // }
 
-  if (user) {
-    return <Navigate replace to="/dashboard" />;
+  if (!user) {
+    return <Navigate replace to="/" />;
   }
 
   return <>{children}</>;
