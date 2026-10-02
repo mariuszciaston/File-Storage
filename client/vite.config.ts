@@ -17,6 +17,12 @@ export default defineConfig(({ mode }) => {
     ],
     preview: {
       port: Number(env.VITE_CLIENT_PROD_PORT) || 4173,
+      proxy: {
+        "/api": {
+          changeOrigin: true,
+          target: `http://localhost:${Number(env.VITE_SERVER_PROD_PORT) || 8081}`,
+        },
+      },
     },
     server: {
       port: Number(env.VITE_CLIENT_DEV_PORT) || 5173,

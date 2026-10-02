@@ -4,7 +4,8 @@ import type { User } from "../types/types";
 
 import { AuthContext } from "./AuthContext";
 
-const isDev = import.meta.env.NODE_ENV !== "production";
+const isDev = import.meta.env.DEV;
+
 const serverPort = isDev
   ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
   : (import.meta.env.VITE_SERVER_PROD_PORT ?? 8081);

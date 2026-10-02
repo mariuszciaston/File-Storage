@@ -8,7 +8,7 @@ import Wrapper from "../components/layouts/Wrapper";
 import { useAuth } from "../hooks/useAuth";
 import { useTitle } from "../hooks/useTitle";
 
-const isDev = import.meta.env.NODE_ENV !== "production";
+const isDev = import.meta.env.DEV;
 
 const serverPort = isDev
   ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
