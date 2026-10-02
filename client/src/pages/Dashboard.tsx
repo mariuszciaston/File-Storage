@@ -20,21 +20,23 @@ export default function Dashboard() {
     <Wrapper>
       <Header onSearchChange={setSearchQuery} searchQuery={searchQuery} />
       <Main>
-        <FolderSidebar
-          folderId={folderId}
-          onNewFolder={() => setNewFolderRequest((request) => request + 1)}
-          onShowStarredChange={setShowStarred}
-          onUploaded={() => setRefreshKey((key) => key + 1)}
-          showStarred={showStarred}
-        />
-        <FolderView
-          newFolderRequest={newFolderRequest}
-          onFolderChange={setFolderId}
-          onSearchChange={setSearchQuery}
-          refreshKey={refreshKey}
-          searchQuery={searchQuery}
-          showStarred={showStarred}
-        />
+        <div className="grid flex-1 grid-cols-1 grid-rows-[auto_minmax(540px,1fr)] items-stretch gap-6 sm:grid-cols-[240px_minmax(0,1fr)] sm:grid-rows-1">
+          <FolderSidebar
+            folderId={folderId}
+            onNewFolder={() => setNewFolderRequest((request) => request + 1)}
+            onShowStarredChange={setShowStarred}
+            onUploaded={() => setRefreshKey((key) => key + 1)}
+            showStarred={showStarred}
+          />
+          <FolderView
+            newFolderRequest={newFolderRequest}
+            onFolderChange={setFolderId}
+            onSearchChange={setSearchQuery}
+            refreshKey={refreshKey}
+            searchQuery={searchQuery}
+            showStarred={showStarred}
+          />
+        </div>
       </Main>
       <Footer />
     </Wrapper>
