@@ -25,6 +25,15 @@ export default tseslint.config(
 				'error',
 				{ argsIgnorePattern: '^_' },
 			],
+
+			'max-lines': [
+				'warn',
+				{
+					max: 300,
+					skipBlankLines: true,
+					skipComments: true,
+				},
+			],
 		},
 	},
 	perfectionist.configs['recommended-natural'],
