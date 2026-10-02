@@ -23,6 +23,7 @@ import type { FileItem, Folder as FolderType } from "../types/types";
 import { FileTypeIcon } from "./FileIcons";
 import FilePreview from "./FilePreview";
 import FolderSidebar from "./FolderSidebar";
+import ModalDialog from "./ModalDialog";
 
 interface FolderBreadcrumb {
   id: number;
@@ -742,62 +743,9 @@ export default function FolderView({
         <FilePreview file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
       {modalAction && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-gray-900/40 p-4 backdrop-blur-sm"
-          onClick={closeActionModal}
-        >
-          <section
-            aria-labelledby="action-modal-title"
-            aria-modal="true"
-            className="w-full max-w-110 rounded-3xl border border-gray-200 bg-white p-6"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-          >
-            <h2 className="mb-5 text-xl font-medium" id="action-modal-title">
-              {modalAction.kind === "new-folder"
-                ? "Create a folder"
-                : modalAction.kind === "rename"
-                  ? `Rename ${modalAction.item.type}`
-                  : `Delete ${modalAction.item.type}?`}
-            </h2>
-            {modalAction.kind === "delete" ? (
-              <p className="text-sm text-gray-600">
-                Delete “{modalAction.name}”
-                {modalAction.item.type === "folder" && " and all its contents"}?
-                This action cannot be undone.
-              </p>
-            ) : (
-              <label
-                className="grid gap-2 text-sm font-medium text-gray-700"
-                htmlFor="action-modal-name"
-              >
-                {modalAction.kind === "new-folder" ? "Folder name" : "New name"}
-                <input
-                  autoFocus
-                  className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
-                  id="action-modal-name"
-                  onChange={(event) => {
-                    setModalValue(event.target.value);
-                    setModalError("");
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !modalPending) {
-                      void submitActionModal();
-                    }
-                    if (event.key === "Escape" && !modalPending) {
-                      closeActionModal();
-                    }
-                  }}
-                  value={modalValue}
-                />
-              </label>
-            )}
-            {modalError && (
-              <p className="mt-3 text-xs text-red-700" role="alert">
-                {modalError}
-              </p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
+        <ModalDialog
+          footer={
+            <>
               <button
                 className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100"
                 disabled={modalPending}
@@ -822,9 +770,55 @@ export default function FolderView({
                       ? "Save"
                       : "Create"}
               </button>
-            </div>
-          </section>
-        </div>
+            </>
+          }
+          onClose={closeActionModal}
+          title={
+            modalAction.kind === "new-folder"
+              ? "Create a folder"
+              : modalAction.kind === "rename"
+                ? `Rename ${modalAction.item.type}`
+                : `Delete ${modalAction.item.type}?`
+          }
+        >
+          {modalAction.kind === "delete" ? (
+            <p className="text-sm text-gray-600">
+              Delete “{modalAction.name}”
+              {modalAction.item.type === "folder" && " and all its contents"}?
+              This action cannot be undone.
+            </p>
+          ) : (
+            <label
+              className="grid gap-2 text-sm font-medium text-gray-700"
+              htmlFor="action-modal-name"
+            >
+              {modalAction.kind === "new-folder" ? "Folder name" : "New name"}
+              <input
+                autoFocus
+                className="h-12 w-full rounded-lg border border-gray-300 bg-white px-3.5 outline-none focus:border-2 focus:border-blue-600"
+                id="action-modal-name"
+                onChange={(event) => {
+                  setModalValue(event.target.value);
+                  setModalError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !modalPending) {
+                    void submitActionModal();
+                  }
+                  if (event.key === "Escape" && !modalPending) {
+                    closeActionModal();
+                  }
+                }}
+                value={modalValue}
+              />
+            </label>
+          )}
+          {modalError && (
+            <p className="mt-3 text-xs text-red-700" role="alert">
+              {modalError}
+            </p>
+          )}
+        </ModalDialog>
       )}
     </section>
   );

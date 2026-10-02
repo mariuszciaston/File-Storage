@@ -3,9 +3,11 @@ import { Upload } from "lucide-react";
 export default function FileUploader({
   folderId,
   onUploaded,
+  onUploadError,
 }: {
   folderId?: number;
   onUploaded?: () => void;
+  onUploadError: (message: string) => void;
 }) {
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -13,7 +15,7 @@ export default function FileUploader({
     if (!file) return;
 
     if (file.size > 1024 * 1024) {
-      alert("File size must not exceed 1MB.");
+      onUploadError("File size must not exceed 1MB.");
       event.target.value = "";
       return;
     }
@@ -22,19 +24,23 @@ export default function FileUploader({
     formData.append("file", file);
     if (folderId != null) formData.append("folderId", String(folderId));
 
-    const response = await fetch("/api/files", {
-      body: formData,
-      method: "POST",
-    });
+    try {
+      const response = await fetch("/api/files", {
+        body: formData,
+        method: "POST",
+      });
 
-    if (response.ok) {
-      if (onUploaded) onUploaded();
-    } else {
-      const data = await response.json();
-      alert(data.errors?.[0]?.msg ?? data.error ?? "Upload failed.");
+      if (response.ok) {
+        if (onUploaded) onUploaded();
+      } else {
+        const data = await response.json();
+        onUploadError(data.errors?.[0]?.msg ?? data.error ?? "Upload failed.");
+      }
+    } catch {
+      onUploadError("The upload failed. Please try again.");
+    } finally {
+      event.target.value = "";
     }
-
-    event.target.value = "";
   }
 
   return (
