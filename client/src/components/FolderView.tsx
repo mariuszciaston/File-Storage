@@ -22,7 +22,6 @@ import type { FileItem, Folder as FolderType } from "../types/types";
 
 import { FileTypeIcon } from "./FileIcons";
 import FilePreview from "./FilePreview";
-import FolderSidebar from "./FolderSidebar";
 import ModalDialog from "./ModalDialog";
 
 interface FolderBreadcrumb {
@@ -67,11 +66,19 @@ const fileIconColorClass = (mimeType: string) =>
           : "text-gray-500";
 
 export default function FolderView({
+  newFolderRequest,
+  onFolderChange,
   onSearchChange,
+  refreshKey,
   searchQuery,
+  showStarred,
 }: {
+  newFolderRequest: number;
+  onFolderChange: (folderId: number | undefined) => void;
   onSearchChange: (query: string) => void;
+  refreshKey: number;
   searchQuery: string;
+  showStarred: boolean;
 }) {
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -84,7 +91,6 @@ export default function FolderView({
   const [modalError, setModalError] = useState("");
   const [modalPending, setModalPending] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [showStarred, setShowStarred] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
@@ -113,23 +119,16 @@ export default function FolderView({
   }, [parentId, showStarred]);
 
   useEffect(() => {
-    async function fetchItems() {
-      const folderUrl =
-        parentId != null ? `/api/folders?parentId=${parentId}` : "/api/folders";
-      const fileUrl = showStarred
-        ? "/api/files?starred=true"
-        : parentId != null
-          ? `/api/files?folderId=${parentId}`
-          : "/api/files";
-      const [foldersResponse, filesResponse] = await Promise.all([
-        fetch(folderUrl),
-        fetch(fileUrl),
-      ]);
-      if (foldersResponse.ok) setFolders(await foldersResponse.json());
-      if (filesResponse.ok) setFiles(await filesResponse.json());
-    }
-    void fetchItems();
-  }, [parentId, showStarred]);
+    void load();
+  }, [load, refreshKey]);
+
+  useEffect(() => {
+    onFolderChange(parentId ?? undefined);
+  }, [onFolderChange, parentId]);
+
+  useEffect(() => {
+    if (newFolderRequest > 0) openNewFolderModal();
+  }, [newFolderRequest]);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -493,15 +492,7 @@ export default function FolderView({
   }
 
   return (
-    <section className="grid flex-1 grid-cols-1 grid-rows-[auto_minmax(540px,1fr)] items-stretch gap-6 sm:grid-cols-[240px_minmax(0,1fr)] sm:grid-rows-1">
-      <FolderSidebar
-        folderId={parentId ?? undefined}
-        onNewFolder={openNewFolderModal}
-        onShowStarredChange={setShowStarred}
-        onUploaded={() => void load()}
-        showStarred={showStarred}
-      />
-
+    <div className="flex min-w-0 flex-1 flex-col">
       <div className="h-full min-h-135 min-w-0 rounded-[1.25rem] bg-white p-4 sm:p-7">
         <div className="min-h-10.5tems-center mb-5 flex justify-between gap-4">
           <nav
@@ -820,7 +811,7 @@ export default function FolderView({
           )}
         </ModalDialog>
       )}
-    </section>
+    </div>
   );
 }
 
