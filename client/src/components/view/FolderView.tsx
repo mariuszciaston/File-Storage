@@ -302,7 +302,11 @@ export default function FolderView({
 
   async function handleDrop(targetFolderId: null | number) {
     const item = dragItem.current;
-    if (!item || item.id === targetFolderId) return;
+    if (!item || (item.type === "folder" && item.id === targetFolderId)) {
+      dragItem.current = null;
+      setDragOver(null);
+      return;
+    }
     const endpoint = item.type === "folder" ? "folders" : "files";
     const payload =
       item.type === "folder"
@@ -546,8 +550,18 @@ export default function FolderView({
                   <span className="flex items-center gap-1" key={breadcrumb.id}>
                     <ChevronRight aria-hidden="true" size={16} />
                     <button
-                      className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""}`}
+                      className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === breadcrumb.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
                       onClick={() => navigateTo(index)}
+                      onDragLeave={() => setDragOver(null)}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDragOver(breadcrumb.id);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void handleDrop(breadcrumb.id);
+                      }}
                     >
                       {breadcrumb.name}
                     </button>
