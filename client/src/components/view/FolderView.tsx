@@ -521,6 +521,10 @@ export default function FolderView({
               <span className="-ml-2 px-2 py-1 text-xl font-medium text-gray-900">
                 Search results
               </span>
+            ) : showStarred ? (
+              <span className="-ml-2 px-2 py-1 text-xl font-medium text-gray-900">
+                Starred items
+              </span>
             ) : (
               <>
                 <button
