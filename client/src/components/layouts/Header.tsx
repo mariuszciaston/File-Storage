@@ -49,7 +49,7 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between gap-0 bg-gray-50/95 p-4 backdrop-blur-xl sm:px-8">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-4 sm:grid-cols-[240px_minmax(0,1fr)_auto]">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 sm:grid sm:grid-cols-[240px_minmax(0,1fr)_auto]">
         <Link
           className="flex shrink-0 items-center gap-2 text-[1.5rem] font-medium tracking-[-0.04em] text-black"
           to="/"
@@ -61,7 +61,7 @@ export default function Header({
         </Link>
 
         {onSearchChange && (
-          <label className="col-span-2 row-start-2 flex h-12 w-full min-w-0 items-center gap-3 rounded-full border border-gray-200 bg-white px-4 text-gray-500 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:max-w-120">
+          <label className="order-2 col-span-2 row-start-2 flex h-12 w-full min-w-0 items-center gap-3 rounded-full border border-gray-200 bg-white px-4 text-gray-500 sm:order-0 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:max-w-120">
             <Search aria-hidden="true" size={19} />
             <input
               aria-label="Search for files and folders"
@@ -84,7 +84,7 @@ export default function Header({
           </label>
         )}
 
-        <div className="col-start-2 row-start-1 flex items-center gap-2 justify-self-end sm:col-start-3">
+        <div className="order-1 col-start-2 row-start-1 flex items-center gap-2 justify-self-end sm:order-0 sm:col-start-3">
           {user ? (
             <>
               <Link
