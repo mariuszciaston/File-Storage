@@ -3,5 +3,6 @@
 @layer base {
   :root {
     font-family: "Google Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+    @apply bg-gray-50;
   }
 }
