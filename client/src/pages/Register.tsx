@@ -7,12 +7,6 @@ import Main from "../components/layouts/Main";
 import Wrapper from "../components/layouts/Wrapper";
 import { useTitle } from "../hooks/useTitle";
 
-const isDev = import.meta.env.DEV;
-
-const serverPort = isDev
-  ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
-  : (import.meta.env.VITE_SERVER_PROD_PORT ?? 8081);
-
 export default function Register() {
   useTitle("Register");
   const navigate = useNavigate();
@@ -32,15 +26,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:${serverPort}/api/auth/register`,
-        {
-          body: JSON.stringify(formData),
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        },
-      );
+      const response = await fetch("/api/auth/register", {
+        body: JSON.stringify(formData),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
 
       if (response.ok) {
         navigate("/login");

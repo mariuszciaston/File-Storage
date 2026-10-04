@@ -4,12 +4,6 @@ import type { User } from "../types/types";
 
 import { AuthContext } from "./AuthContext";
 
-const isDev = import.meta.env.DEV;
-
-const serverPort = isDev
-  ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
-  : (import.meta.env.VITE_SERVER_PROD_PORT ?? 8081);
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<null | User>(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +14,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:${serverPort}/api/auth/me`,
-        {
-          credentials: "include",
-        },
-      );
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
@@ -43,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch(`http://localhost:${serverPort}/api/auth/logout`, {
+      await fetch("/api/auth/logout", {
         credentials: "include",
         method: "POST",
       });

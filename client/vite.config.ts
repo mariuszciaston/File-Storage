@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
     ],
     preview: {
+      host: "0.0.0.0",
       port: Number(env.VITE_CLIENT_PROD_PORT) || 4173,
       proxy: {
         "/api": {

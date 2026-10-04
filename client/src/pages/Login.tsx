@@ -8,12 +8,6 @@ import Wrapper from "../components/layouts/Wrapper";
 import { useAuth } from "../hooks/useAuth";
 import { useTitle } from "../hooks/useTitle";
 
-const isDev = import.meta.env.DEV;
-
-const serverPort = isDev
-  ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
-  : (import.meta.env.VITE_SERVER_PROD_PORT ?? 8081);
-
 export default function Login() {
   useTitle("Login");
   const navigate = useNavigate();
@@ -28,15 +22,12 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await fetch(
-        `http://localhost:${serverPort}/api/auth/login`,
-        {
-          body: JSON.stringify(formData),
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        },
-      );
+      const response = await fetch("/api/auth/login", {
+        body: JSON.stringify(formData),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
 
       if (response.ok) {
         const data = await response.json();

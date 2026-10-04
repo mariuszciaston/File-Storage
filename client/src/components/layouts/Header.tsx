@@ -4,12 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../hooks/useAuth";
 
-const isDev = import.meta.env.DEV;
-
-const serverPort = isDev
-  ? (import.meta.env.VITE_SERVER_DEV_PORT ?? 8080)
-  : (import.meta.env.VITE_SERVER_PROD_PORT ?? 8081);
-
 export default function Header({
   onSearchChange,
   searchQuery,
@@ -25,15 +19,12 @@ export default function Header({
     setGuestLoginError("");
 
     try {
-      const response = await fetch(
-        `http://localhost:${serverPort}/api/auth/login`,
-        {
-          body: JSON.stringify({ password: "123", username: "guest" }),
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        },
-      );
+      const response = await fetch("/api/auth/login", {
+        body: JSON.stringify({ password: "123", username: "guest" }),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
 
       const data = await response.json();
       if (response.ok) {
