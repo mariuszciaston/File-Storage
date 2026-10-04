@@ -516,7 +516,7 @@ export default function FolderView({
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="h-full min-h-135 min-w-0 rounded-[1.25rem] bg-white p-4 sm:p-7">
-        <div className="min-h-10.5tems-center mb-5 flex justify-between gap-4">
+        <div className="mb-5 flex min-h-10.5 justify-between gap-4">
           <nav
             aria-label="Breadcrumb"
             className="flex min-w-0 flex-wrap items-center gap-1 text-gray-500"
@@ -572,7 +572,7 @@ export default function FolderView({
           </nav>
           <div
             aria-label="View mode"
-            className="flex gap-0 rounded-full border border-gray-200 p-0.75"
+            className="flex h-min gap-0 rounded-full border border-gray-200 p-0.75"
           >
             <button
               aria-label="Grid view"
