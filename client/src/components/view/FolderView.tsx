@@ -652,7 +652,10 @@ export default function FolderView({
                       </button>
                     </th>
                   ))}
-                  <th aria-label="Actions" />
+                  <th
+                    aria-label="Actions"
+                    className="border-b border-gray-200"
+                  />
                 </tr>
               </thead>
               <tbody>
@@ -696,7 +699,7 @@ export default function FolderView({
                     <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                       —
                     </td>
-                    <td className="h-13.5order-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
+                    <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
                       {dateLabel(folder.updatedAt)}
                     </td>
                     <td className="h-13.5 border-b border-gray-100 px-3 py-2 whitespace-nowrap text-gray-500">
