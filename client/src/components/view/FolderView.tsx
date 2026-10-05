@@ -395,7 +395,7 @@ export default function FolderView({
   function renderFolder(folder: FolderType) {
     return (
       <article
-        className={`relative min-w-0 cursor-pointer overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+        className={`relative min-w-0 cursor-pointer overflow-visible rounded-2xl border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600 ${dragOver === folder.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
         draggable
         key={`folder-${folder.id}`}
         onClick={() => openFolder(folder)}
@@ -423,7 +423,7 @@ export default function FolderView({
             </span>
             <div className="min-w-0 flex-1 text-left">
               <button
-                className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                className="block max-w-full cursor-pointer truncate bg-transparent text-sm font-medium text-gray-700"
                 onClick={(event) => {
                   event.stopPropagation();
                   openFolder(folder);
@@ -452,7 +452,7 @@ export default function FolderView({
             : "";
     return (
       <article
-        className="relative flex h-full min-w-0 cursor-pointer flex-col gap-2 overflow-visible rounded-[0.9rem] border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600"
+        className="relative flex h-full min-w-0 cursor-pointer flex-col gap-2 overflow-visible rounded-2xl border border-gray-200 bg-white p-3 transition-colors hover:outline-2 hover:outline-blue-600"
         draggable
         key={`file-${file.id}`}
         onClick={() => setPreviewFile(file)}
@@ -474,7 +474,7 @@ export default function FolderView({
               </span>
               <div className="min-w-0 flex-1 text-left">
                 <button
-                  className="block max-w-full cursor-pointer overflow-hidden bg-transparent text-[0.88rem] font-medium text-ellipsis whitespace-nowrap text-gray-700"
+                  className="block max-w-full cursor-pointer truncate bg-transparent text-sm font-medium text-gray-700"
                   onClick={(event) => {
                     event.stopPropagation();
                     setPreviewFile(file);
@@ -490,7 +490,7 @@ export default function FolderView({
           {file.mimeType.startsWith("image/") ? (
             <button
               aria-label={`Preview ${file.name}`}
-              className="block h-27.5 w-full cursor-pointer rounded-[0.6rem] border border-gray-200 bg-white p-0"
+              className="block h-27.5 w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-0"
               onClick={(event) => {
                 event.stopPropagation();
                 setPreviewFile(file);
@@ -498,13 +498,13 @@ export default function FolderView({
             >
               <img
                 alt=""
-                className="h-full w-full rounded-[0.6rem] object-contain"
+                className="size-full rounded-lg object-contain"
                 loading="lazy"
                 src={`/api/files/${file.id}/preview`}
               />
             </button>
           ) : (
-            <div className="grid h-27.5 w-full place-items-center rounded-[0.6rem] border border-gray-200 bg-white text-gray-500">
+            <div className="grid h-27.5 w-full place-items-center rounded-lg border border-gray-200 bg-white text-gray-500">
               <FileTypeIcon mimeType={file.mimeType} size={32} />
             </div>
           )}
@@ -515,7 +515,7 @@ export default function FolderView({
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="h-full min-h-135 min-w-0 rounded-[1.25rem] bg-white p-4 sm:p-7">
+      <div className="h-full min-h-135 min-w-0 rounded-2xl bg-white p-4 sm:p-7">
         <div className="mb-5 flex min-h-10.5 justify-between gap-4">
           <nav
             aria-label="Breadcrumb"
@@ -532,7 +532,7 @@ export default function FolderView({
             ) : (
               <>
                 <button
-                  className={`-ml-2 max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${breadcrumbs.length === 0 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === "root" ? "outline-2 outline-blue-600" : ""}`}
+                  className={`-ml-2 max-w-55 truncate rounded-lg bg-transparent px-2 py-1 hover:bg-gray-100 ${breadcrumbs.length === 0 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === "root" ? "outline-2 outline-blue-600" : ""}`}
                   onClick={() => navigateTo(-1)}
                   onDragLeave={() => setDragOver(null)}
                   onDragOver={(event) => {
@@ -550,7 +550,7 @@ export default function FolderView({
                   <span className="flex items-center gap-1" key={breadcrumb.id}>
                     <ChevronRight aria-hidden="true" size={16} />
                     <button
-                      className={`max-w-55 overflow-hidden rounded-lg bg-transparent px-2 py-1 text-ellipsis whitespace-nowrap hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === breadcrumb.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
+                      className={`max-w-55 truncate rounded-lg bg-transparent px-2 py-1 hover:bg-gray-100 ${index === breadcrumbs.length - 1 ? "text-xl font-medium text-gray-900" : ""} ${dragOver === breadcrumb.id ? "bg-blue-50 outline-2 outline-blue-600" : ""}`}
                       onClick={() => navigateTo(index)}
                       onDragLeave={() => setDragOver(null)}
                       onDragOver={(event) => {
@@ -634,7 +634,7 @@ export default function FolderView({
               )}
             </>
           ) : (
-            <table className="w-full border-collapse text-[0.86rem]">
+            <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="text-left">
                   {(["name", "size", "updatedAt"] as const).map((key) => (
