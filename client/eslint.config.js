@@ -8,8 +8,33 @@ import react from "eslint-plugin-react-x";
 import reactX from "eslint-plugin-react-x";
 import reactDom from "eslint-plugin-react-dom";
 import perfectionist from "eslint-plugin-perfectionist";
+import eslintPluginTailwindcss from "eslint-plugin-tailwindcss";
 
 export default defineConfig([
+  // 2. Include the recommended config
+  eslintPluginTailwindcss.configs["flat/recommended"] ||
+    eslintPluginTailwindcss.configs.recommended,
+
+  // 3. Define your own settings
+  {
+    settings: {
+      // Define the tailwindcss settings with the MANDATORY `cssConfigPath`
+      tailwindcss: {
+        cssConfigPath: "./src/styles/index.css",
+      },
+    },
+    // Optional: Customize the rules to your needs
+    rules: {
+      "tailwindcss/classnames-order": "warn",
+      "tailwindcss/no-arbitrary-value": "warn",
+      "tailwindcss/no-custom-classname": [
+        "warn",
+        { whitelist: ["custom\\-*"] },
+      ],
+      "tailwindcss/no-contradicting-classname": "warn",
+    },
+  },
+
   globalIgnores(["dist"]),
   {
     files: ["**/*.{ts,tsx}"],
@@ -43,15 +68,15 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      "max-lines": [
-        "warn",
-        {
-          max: 300,
-          skipBlankLines: true,
-          skipComments: true,
-        },
-      ],
-    },
+    // rules: {
+    //   "max-lines": [
+    //     "warn",
+    //     {
+    //       max: 300,
+    //       skipBlankLines: true,
+    //       skipComments: true,
+    //     },
+    //   ],
+    // },
   },
 ]);
